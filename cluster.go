@@ -37,18 +37,18 @@ const (
 
 type CouchbaseCluster struct {
 	etcdClient                 *etcd.Client
-	localCouchbaseIp           string
-	localCouchbasePort         string
-	localCouchbaseVersion      string
-	adminUsername              string
-	adminPassword              string
+	LocalCouchbaseIp           string
+	LocalCouchbasePort         string
+	LocalCouchbaseVersion      string
+	AdminUsername              string
+	AdminPassword              string
 	defaultBucketRamQuotaMB    string
 	defaultBucketReplicaNumber string
 }
 
 func (c *CouchbaseCluster) StartCouchbaseNode() error {
 
-	c.localCouchbasePort = LOCAL_COUCHBASE_PORT
+	c.LocalCouchbasePort = LOCAL_COUCHBASE_PORT
 	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
 	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
 
@@ -203,8 +203,8 @@ func (c *CouchbaseCluster) FetchClusterDetails() error {
 
 		endpointUrl := fmt.Sprintf(
 			"http://%v:%v/pools",
-			c.localCouchbaseIp,
-			c.localCouchbasePort,
+			c.LocalCouchbaseIp,
+			c.LocalCouchbasePort,
 		)
 
 		jsonMap := map[string]interface{}{}
@@ -221,7 +221,7 @@ func (c *CouchbaseCluster) FetchClusterDetails() error {
 		}
 
 		log.Printf("Version: %v", versionStr)
-		c.localCouchbaseVersion = versionStr
+		c.LocalCouchbaseVersion = versionStr
 
 		return nil
 
@@ -235,7 +235,7 @@ func (c CouchbaseCluster) WaitForRestService() error {
 
 	for i := 0; i < MAX_RETRIES_START_COUCHBASE; i++ {
 
-		endpointUrl := fmt.Sprintf("http://%v:%v/", c.localCouchbaseIp, c.localCouchbasePort)
+		endpointUrl := fmt.Sprintf("http://%v:%v/", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 		log.Printf("Waiting for REST service at %v to be up", endpointUrl)
 		resp, err := http.Get(endpointUrl)
 		if err == nil {
@@ -351,12 +351,12 @@ func CouchbaseServiceRunning() (bool, error) {
 // Docs: http://docs.couchbase.com/admin/admin/REST/rest-node-set-username.html
 func (c CouchbaseCluster) ClusterInit() error {
 
-	endpointUrl := fmt.Sprintf("http://%v:%v/settings/web", c.localCouchbaseIp, c.localCouchbasePort)
+	endpointUrl := fmt.Sprintf("http://%v:%v/settings/web", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
 	data := url.Values{
-		"username": {c.adminUsername},
-		"password": {c.adminPassword},
-		"port":     {c.localCouchbasePort},
+		"username": {c.AdminUsername},
+		"password": {c.AdminPassword},
+		"port":     {c.LocalCouchbasePort},
 	}
 
 	if err := c.POST(true, endpointUrl, data); err != nil {
@@ -370,11 +370,11 @@ func (c CouchbaseCluster) ClusterInit() error {
 // What's the major version of Couchbase?  ie, 2 or 3 corresponding to v2.x and v3.x
 func (c CouchbaseCluster) CouchbaseMajorVersion() (int, error) {
 
-	if len(c.localCouchbaseVersion) == 0 {
+	if len(c.LocalCouchbaseVersion) == 0 {
 		return -1, fmt.Errorf("c.localcouchbaseversion is empty ")
 	}
 
-	firstCharVerion, _ := utf8.DecodeRuneInString(c.localCouchbaseVersion)
+	firstCharVerion, _ := utf8.DecodeRuneInString(c.LocalCouchbaseVersion)
 	majorVersion, err := strconv.Atoi(fmt.Sprintf("%v", firstCharVerion))
 	if err != nil {
 		return -1, err
@@ -394,7 +394,7 @@ func (c CouchbaseCluster) SetClusterRam() error {
 		ramMb = "1024"
 	}
 
-	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default", c.localCouchbaseIp, c.localCouchbasePort)
+	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
 	data := url.Values{
 		"memoryQuota": {ramMb},
@@ -470,7 +470,7 @@ func (c CouchbaseCluster) CreateDefaultBucket() error {
 		return nil
 	}
 
-	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.localCouchbaseIp, c.localCouchbasePort)
+	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
 	data := url.Values{
 		"name":          {"default"},
@@ -490,8 +490,8 @@ func (c CouchbaseCluster) HasDefaultBucket() (bool, error) {
 
 	endpointUrl := fmt.Sprintf(
 		"http://%v:%v/pools/default/buckets",
-		c.localCouchbaseIp,
-		c.localCouchbasePort,
+		c.LocalCouchbaseIp,
+		c.LocalCouchbasePort,
 	)
 
 	jsonList := []interface{}{}
@@ -571,7 +571,7 @@ func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, e
 		if !ok {
 			return false, fmt.Errorf("No hostname string found")
 		}
-		if strings.Contains(hostnameStr, c.localCouchbaseIp) {
+		if strings.Contains(hostnameStr, c.LocalCouchbaseIp) {
 
 			status := nodeMap["status"]
 			statusStr, ok := status.(string)
@@ -582,7 +582,7 @@ func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, e
 				log.Printf("CheckIfInCluster returning true")
 				return true, nil
 			} else {
-				log.Printf("%v in cluster, but status not healthy.  Status: %v", c.localCouchbaseIp, statusStr)
+				log.Printf("%v in cluster, but status not healthy.  Status: %v", c.LocalCouchbaseIp, statusStr)
 			}
 
 		}
@@ -604,7 +604,7 @@ func (c CouchbaseCluster) TriggerRebalance(liveNodeIp string) error {
 
 	log.Printf("TriggerRebalance otpNodeList: %v", otpNodeList)
 
-	liveNodePort := c.localCouchbasePort // TODO: we should be getting this from etcd
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/controller/rebalance", liveNodeIp, liveNodePort)
 
@@ -657,7 +657,7 @@ func (c CouchbaseCluster) OtpNodeList(liveNodeIp string) ([]string, error) {
 func (c CouchbaseCluster) GetClusterNodes(liveNodeIp string) ([]interface{}, error) {
 
 	log.Printf("GetClusterNodes()")
-	liveNodePort := c.localCouchbasePort // TODO: we should be getting this from etcd
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default", liveNodeIp, liveNodePort)
 
@@ -713,14 +713,14 @@ func (c CouchbaseCluster) AddNode(liveNodeIp string) error {
 
 	log.Printf("AddNode()")
 
-	liveNodePort := c.localCouchbasePort // TODO: we should be getting this from etcd
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/controller/addNode", liveNodeIp, liveNodePort)
 
 	data := url.Values{
-		"hostname": {c.localCouchbaseIp},
-		"user":     {c.adminUsername},
-		"password": {c.adminPassword},
+		"hostname": {c.LocalCouchbaseIp},
+		"user":     {c.AdminUsername},
+		"password": {c.AdminPassword},
 	}
 
 	log.Printf("AddNode posting to %v with data: %v", endpointUrl, data.Encode())
@@ -779,7 +779,7 @@ func (c CouchbaseCluster) WaitUntilNoRebalanceRunning(liveNodeIp string) error {
 
 func (c CouchbaseCluster) IsRebalancing(liveNodeIp string) (bool, error) {
 
-	liveNodePort := c.localCouchbasePort // TODO: we should be getting this from etcd
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/rebalanceProgress", liveNodeIp, liveNodePort)
 
@@ -811,7 +811,7 @@ func (c CouchbaseCluster) getJsonData(endpointUrl string, into interface{}) erro
 		return err
 	}
 
-	req.SetBasicAuth(c.adminUsername, c.adminPassword)
+	req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -840,7 +840,7 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 	if defaultAdminCreds {
 		req.SetBasicAuth(COUCHBASE_DEFAULT_ADMIN_USERNAME, COUCHBASE_DEFAULT_ADMIN_PASSWORD)
 	} else {
-		req.SetBasicAuth(c.adminUsername, c.adminPassword)
+		req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
 	}
 
 	resp, err := client.Do(req)
@@ -925,7 +925,7 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 
 	// the etcd key to use, ie: /couchbase-node-state/<our ip>
 	// TODO: maybe this should be ip:port
-	key := path.Join(KEY_NODE_STATE, c.localCouchbaseIp)
+	key := path.Join(KEY_NODE_STATE, c.LocalCouchbaseIp)
 
 	log.Printf("Publish node-state to key: %v", key)
 
