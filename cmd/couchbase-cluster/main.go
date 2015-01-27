@@ -27,13 +27,13 @@ Options:
 	etcdServers := extractEtcdServerList(arguments)
 
 	if waitUntilRunning {
-		couchbaseCluster := &cbcluster.CouchbaseCluster{}
-		if len(etcdServers) > 0 {
-			log.Printf("etcdServer: %v", etcdServers)
-			couchbaseCluster.EtcdServers = etcdServers
-		}
 
-		// couchbaseCluster.WaitUntilClusterRunning()
+		couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+
+		numRetries := 10000
+		if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
+			log.Fatalf("Failed to wait until cluster running: %v", err)
+		}
 
 	}
 
