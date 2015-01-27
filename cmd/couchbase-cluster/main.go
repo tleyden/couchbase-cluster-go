@@ -2,33 +2,56 @@ package main
 
 import (
 	"log"
+	"strings"
 
-	"github.com/alecthomas/kingpin"
+	"github.com/docopt/docopt-go"
 	"github.com/tleyden/couchbase-cluster-go"
 )
 
-var (
-	app = kingpin.New(
-		"couchbase-cluster",
-		"CLI util for managing a Couchbase Server cluster under CoreOS.",
-	)
-
-	blockUntilRunning = app.Flag(
-		"block-until-running",
-		"Block until all couchbase nodes are detected to be healthy",
-	).Bool()
-
-	etcdServers = app.Flag(
-		"etcd-servers",
-		"Comma separated list of etcd servers (ip/port)",
-	).Default("127.0.0.1:4001").String()
-)
-
 func main() {
-	kingpin.Parse()
-	log.Printf("blockUntilRunning: %v, etcdServers: %v", *blockUntilRunning, *etcdServers)
 
-	couchbaseCluster := &cbcluster.CouchbaseCluster{}
-	log.Printf("couchbase cluster: %v", couchbaseCluster)
+	usage := `Couchbase-Cluster.
+
+Usage:
+  couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
+  couchbase-cluster -h | --help
+
+Options:
+  -h --help     Show this screen.
+  --etcd-servers=<server-list>  Comma separated list of etcd servers [default: 127.0.0.1:4001]`
+
+	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
+
+	_, waitUntilRunning := arguments["wait-until-running"]
+
+	etcdServers := extractEtcdServerList(arguments)
+
+	if waitUntilRunning {
+		couchbaseCluster := &cbcluster.CouchbaseCluster{}
+		if len(etcdServers) > 0 {
+			log.Printf("etcdServer: %v", etcdServers)
+			couchbaseCluster.EtcdServers = etcdServers
+		}
+
+		// couchbaseCluster.WaitUntilClusterRunning()
+
+	}
+
+}
+
+// convert from comma separated list to a string slice
+func extractEtcdServerList(docOptParsed map[string]interface{}) []string {
+
+	rawServerList, found := docOptParsed["--etcd-servers"]
+	if !found {
+		return nil
+	}
+
+	rawServerListStr, ok := rawServerList.(string)
+	if !ok {
+		return nil
+	}
+
+	return strings.Split(rawServerListStr, ",")
 
 }
