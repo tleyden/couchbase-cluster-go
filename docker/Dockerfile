@@ -14,8 +14,7 @@ RUN apt-get update && apt-get install -y \
 
 # Build
 RUN mkdir -p $GOPATH && \
-    go get -u -v -t github.com/tleyden/couchbase-cluster-go/...
+    go get -u -v -t github.com/tleyden/couchbase-cluster-go/... && \
+    cp $GOPATH/bin/couchbase-cluster /usr/local/bin/
 
-# Copy binary to directory in path
-ADD $GOPATH/bin/couchbase-cluster /usr/local/bin/
 
