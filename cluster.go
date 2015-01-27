@@ -47,17 +47,32 @@ type CouchbaseCluster struct {
 	EtcdServers                []string
 }
 
+func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
+
+	c := &CouchbaseCluster{}
+
+	if len(etcdServers) > 0 {
+		c.EtcdServers = etcdServers
+	} else {
+		c.EtcdServers = []string{LOCAL_ETCD_URL}
+	}
+	c.ConnectToEtcd()
+	return c
+
+}
+
+func (c *CouchbaseCluster) ConnectToEtcd() {
+
+	log.Printf("Connecting to etcd: %v", c.EtcdServers)
+	c.etcdClient = etcd.NewClient(c.EtcdServers)
+	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
+}
+
 func (c *CouchbaseCluster) StartCouchbaseNode() error {
 
 	c.LocalCouchbasePort = LOCAL_COUCHBASE_PORT
 	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
 	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
-
-	if len(c.EtcdServers) == 0 {
-		c.EtcdServers = []string{LOCAL_ETCD_URL}
-	}
-	c.etcdClient = etcd.NewClient(c.EtcdServers)
-	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 
 	success, err := c.BecomeFirstClusterNode()
 	if err != nil {
@@ -596,6 +611,40 @@ func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, e
 	return false, nil
 }
 
+// Check if all nodes in the cluster are healthy.  Connect to liveNodeIp.
+func (c CouchbaseCluster) CheckAllNodesClusterHealthy(liveNodeIp string) (bool, error) {
+
+	log.Printf("CheckAllNodesClusterHealthy()")
+	nodes, err := c.GetClusterNodes(liveNodeIp)
+	if err != nil {
+		return false, err
+	}
+	log.Printf("CheckAllNodesClusterHealthy: %+v", nodes)
+
+	for _, node := range nodes {
+
+		nodeMap, ok := node.(map[string]interface{})
+		if !ok {
+			return false, fmt.Errorf("Node had unexpected data type")
+		}
+
+		status := nodeMap["status"]
+		statusStr, ok := status.(string)
+		if !ok {
+			return false, fmt.Errorf("No status string found")
+		}
+		if statusStr != "healthy" {
+			log.Printf("node %+v status not healthy.  Status: %v", nodeMap, statusStr)
+			return false, nil
+		}
+
+	}
+
+	log.Printf("All cluster nodes appear to be healthy")
+	return true, nil
+
+}
+
 // Based on docs: http://docs.couchbase.com/couchbase-manual-2.5/cb-rest-api/#rebalancing-nodes
 func (c CouchbaseCluster) TriggerRebalance(liveNodeIp string) error {
 
@@ -936,5 +985,54 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 	_, err := c.etcdClient.Set(key, "up", ttlSeconds)
 
 	return err
+
+}
+
+// Connect to etcd and grap the first node that is up
+// Connect to Couchbase Cluster via REST api and get node states
+// If all nodes are healthy, then return.  Otherwise retry loop.
+func (c CouchbaseCluster) WaitUntilClusterRunning(numRetries int) error {
+
+	sleepSeconds := 0
+
+	for i := 0; i < numRetries; i++ {
+
+		sleepSeconds += 10
+
+		log.Printf("Calling FindLiveNode()")
+
+		liveNodeIp, err := c.FindLiveNode()
+		if err != nil || liveNodeIp == "" {
+
+			log.Printf("FindLiveNode returned err: %v or empty ip", err)
+
+			log.Printf("Sleeping for %vs", sleepSeconds)
+
+			<-time.After(time.Second * time.Duration(sleepSeconds))
+
+			continue
+
+		}
+
+		log.Printf("Connecting to liveNodeIp: %v", liveNodeIp)
+
+		ok, err := c.CheckAllNodesClusterHealthy(liveNodeIp)
+		if err != nil || !ok {
+
+			log.Printf("CheckAllNodesClusterHealthy checked failed.  ok: %v err: %v", ok, err)
+
+			log.Printf("Sleeping for %vs", sleepSeconds)
+
+			<-time.After(time.Second * time.Duration(sleepSeconds))
+
+			continue
+
+		}
+
+		return nil
+
+	}
+
+	return fmt.Errorf("Gave up waiting for cluster to be healthy")
 
 }
