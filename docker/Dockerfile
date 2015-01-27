@@ -12,12 +12,10 @@ RUN apt-get update && apt-get install -y \
   wget \
   curl 
 
-
-# Build Sync Gateway
+# Build
 RUN mkdir -p $GOPATH && \
-    go get -u -v -t github.com/tleyden/couchbase-cluster-go
+    go get -u -v -t github.com/tleyden/couchbase-cluster-go/...
 
-
-# Add Sync Gateway launch script
-ADD scripts/sync-gw-start /usr/local/bin/
+# Copy binary to directory in path
+ADD $GOPATH/bin/* /usr/local/bin/
 
