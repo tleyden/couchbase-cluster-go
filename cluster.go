@@ -44,6 +44,7 @@ type CouchbaseCluster struct {
 	AdminPassword              string
 	defaultBucketRamQuotaMB    string
 	defaultBucketReplicaNumber string
+	EtcdServers                []string
 }
 
 func (c *CouchbaseCluster) StartCouchbaseNode() error {
@@ -52,7 +53,10 @@ func (c *CouchbaseCluster) StartCouchbaseNode() error {
 	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
 	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
 
-	c.etcdClient = etcd.NewClient([]string{LOCAL_ETCD_URL})
+	if len(c.EtcdServers) == 0 {
+		c.EtcdServers = []string{LOCAL_ETCD_URL}
+	}
+	c.etcdClient = etcd.NewClient(c.EtcdServers)
 	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 
 	success, err := c.BecomeFirstClusterNode()
