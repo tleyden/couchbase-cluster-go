@@ -17,5 +17,5 @@ RUN mkdir -p $GOPATH && \
     go get -u -v -t github.com/tleyden/couchbase-cluster-go/...
 
 # Copy binary to directory in path
-ADD $GOPATH/bin/* /usr/local/bin/
+ADD $GOPATH/bin/couchbase-cluster /usr/local/bin/
 
