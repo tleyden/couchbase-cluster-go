@@ -2,9 +2,7 @@
 *~
 .#*
 \#*\#
-
 *.class
-
 .idea
 *.iml
 .gradle
@@ -12,3 +10,4 @@ local.properties
 /.DS_Store
 build
 cli/config.json
+cmd/couchbase-cluster/couchbase-cluster
