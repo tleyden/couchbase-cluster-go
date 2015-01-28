@@ -21,6 +21,7 @@ import (
 const (
 	LOCAL_ETCD_URL              = "http://127.0.0.1:4001"
 	KEY_NODE_STATE              = "/couchbase.com/couchbase-node-state"
+	KEY_USER_PASS               = "/couchbase.com/userpass"
 	TTL_NONE                    = 0
 	MAX_RETRIES_JOIN_CLUSTER    = 10
 	MAX_RETRIES_START_COUCHBASE = 10
@@ -709,7 +710,7 @@ func (c CouchbaseCluster) OtpNodeList(liveNodeIp string) ([]string, error) {
 
 func (c CouchbaseCluster) GetClusterNodes(liveNodeIp string) ([]interface{}, error) {
 
-	log.Printf("GetClusterNodes()")
+	log.Printf("GetClusterNodes() called with: %v", liveNodeIp)
 	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default", liveNodeIp, liveNodePort)
@@ -1034,5 +1035,29 @@ func (c CouchbaseCluster) WaitUntilClusterRunning(numRetries int) error {
 	}
 
 	return fmt.Errorf("Gave up waiting for cluster to be healthy")
+
+}
+
+// Find the admin credentials in etcd under /couchbase.com/userpass
+// and update this CouchbaseCluster's fields accordingly
+func (c *CouchbaseCluster) LoadAdminCredsFromEtcd() error {
+
+	key := path.Join(KEY_USER_PASS)
+
+	response, err := c.etcdClient.Get(key, false, false)
+	if err != nil {
+		return fmt.Errorf("Error getting key: %v.  Err: %v", key, err)
+	}
+
+	userpassRaw := response.Node.Value
+	if !strings.Contains(userpassRaw, ":") {
+		return fmt.Errorf("Invalid user/pass: %v", userpassRaw)
+	}
+
+	userpassComponents := strings.Split(userpassRaw, ":")
+	c.AdminUsername = userpassComponents[0]
+	c.AdminPassword = userpassComponents[1]
+
+	return nil
 
 }

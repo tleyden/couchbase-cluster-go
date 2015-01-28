@@ -30,6 +30,17 @@ Options:
 
 		couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
 
+		if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
+			log.Fatalf("Failed to get admin credentials from etc: %v", err)
+		}
+
+		// stupid hack needed because we aren't storing the live node ports
+		// in etcd.  for ecample, in etcd we have:
+		//   /couchbase.com/couchbase-node-state/10.153.167.148
+		// but we should have:
+		//   /couchbase.com/couchbase-node-state/10.153.167.148:8091
+		couchbaseCluster.LocalCouchbasePort = 8091
+
 		numRetries := 10000
 		if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
 			log.Fatalf("Failed to wait until cluster running: %v", err)
