@@ -39,7 +39,7 @@ Options:
 		//   /couchbase.com/couchbase-node-state/10.153.167.148
 		// but we should have:
 		//   /couchbase.com/couchbase-node-state/10.153.167.148:8091
-		couchbaseCluster.LocalCouchbasePort = 8091
+		couchbaseCluster.LocalCouchbasePort = "8091"
 
 		numRetries := 10000
 		if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
