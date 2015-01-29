@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	LOCAL_ETCD_URL              = "http://127.0.0.1:4001"
 	KEY_NODE_STATE              = "/couchbase.com/couchbase-node-state"
 	KEY_USER_PASS               = "/couchbase.com/userpass"
 	TTL_NONE                    = 0
@@ -54,8 +53,10 @@ func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
 
 	if len(etcdServers) > 0 {
 		c.EtcdServers = etcdServers
+		log.Printf("Connect to explict etcd servers: %v", c.EtcdServers)
 	} else {
-		c.EtcdServers = []string{LOCAL_ETCD_URL}
+		c.EtcdServers = []string{}
+		log.Printf("Connect to etcd on localhost")
 	}
 	c.ConnectToEtcd()
 	return c
@@ -64,7 +65,6 @@ func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
 
 func (c *CouchbaseCluster) ConnectToEtcd() {
 
-	log.Printf("Connecting to etcd: %v", c.EtcdServers)
 	c.etcdClient = etcd.NewClient(c.EtcdServers)
 	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 }

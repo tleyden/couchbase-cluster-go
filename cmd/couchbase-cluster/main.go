@@ -18,7 +18,7 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  --etcd-servers=<server-list>  Comma separated list of etcd servers [default: 127.0.0.1:4001]`
+  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost`
 
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
 
