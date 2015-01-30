@@ -30,22 +30,16 @@ Options:
 	}
 
 	if commandEnabled(arguments, "start-couchbase-node") {
-		startCouchbaseNode(etcdServers)
+
+		localIp, found := arguments["--local-ip"]
+		if !found {
+			log.Fatalf("Required argument missing")
+		}
+		localIpString := localIp.(string)
+		startCouchbaseNode(etcdServers, localIpString)
 		return
 	}
 
-}
-
-func commandEnabled(arguments map[string]interface{}, commandKey string) bool {
-	val, ok := arguments[commandKey]
-	if !ok {
-		return false
-	}
-	boolVal, ok := val.(bool)
-	if !ok {
-		return false
-	}
-	return boolVal
 }
 
 func waitUntilRunning(etcdServers []string) {
@@ -65,9 +59,10 @@ func waitUntilRunning(etcdServers []string) {
 
 }
 
-func startCouchbaseNode(etcdServers []string) {
+func startCouchbaseNode(etcdServers []string, localIp string) {
 
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+	couchbaseCluster.LocalCouchbaseIp = localIp
 
 	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
@@ -107,4 +102,16 @@ func extractEtcdServerList(docOptParsed map[string]interface{}) []string {
 
 	return strings.Split(rawServerListStr, ",")
 
+}
+
+func commandEnabled(arguments map[string]interface{}, commandKey string) bool {
+	val, ok := arguments[commandKey]
+	if !ok {
+		return false
+	}
+	boolVal, ok := val.(bool)
+	if !ok {
+		return false
+	}
+	return boolVal
 }
