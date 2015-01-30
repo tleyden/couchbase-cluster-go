@@ -71,6 +71,10 @@ func (c *CouchbaseCluster) ConnectToEtcd() {
 
 func (c *CouchbaseCluster) StartCouchbaseNode() error {
 
+	if c.LocalCouchbaseIp == "" {
+		return fmt.Errorf("You must define LocalCouchbaseIp before calling")
+	}
+
 	c.LocalCouchbasePort = LOCAL_COUCHBASE_PORT
 	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
 	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
