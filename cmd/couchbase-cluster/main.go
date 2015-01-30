@@ -24,17 +24,28 @@ Options:
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
 	etcdServers := extractEtcdServerList(arguments)
 
-	_, cmdWaitUntilRunning := arguments["wait-until-running"]
-	if cmdWaitUntilRunning {
+	if commandEnabled(arguments, "wait-until-running") {
 		waitUntilRunning(etcdServers)
 		return
 	}
 
-	_, cmdStartCouchbaseNode := arguments["start-couchbase-node"]
-	if cmdStartCouchbaseNode {
+	if commandEnabled(arguments, "start-couchbase-node") {
 		startCouchbaseNode(etcdServers)
+		return
 	}
 
+}
+
+func commandEnabled(arguments map[string]interface{}, commandKey string) bool {
+	val, ok := arguments[commandKey]
+	if !ok {
+		return false
+	}
+	boolVal, ok := val.(bool)
+	if !ok {
+		return false
+	}
+	return boolVal
 }
 
 func waitUntilRunning(etcdServers []string) {
