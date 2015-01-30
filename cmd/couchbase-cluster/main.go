@@ -14,6 +14,7 @@ func main() {
 
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
+  couchbase-cluster start-couchbase-node --local-ip=<ip>
   couchbase-cluster -h | --help
 
 Options:
@@ -21,32 +22,62 @@ Options:
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost`
 
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
-
-	_, waitUntilRunning := arguments["wait-until-running"]
-
 	etcdServers := extractEtcdServerList(arguments)
 
-	if waitUntilRunning {
-
-		couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
-
-		if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
-			log.Fatalf("Failed to get admin credentials from etc: %v", err)
-		}
-
-		// stupid hack needed because we aren't storing the live node ports
-		// in etcd.  for ecample, in etcd we have:
-		//   /couchbase.com/couchbase-node-state/10.153.167.148
-		// but we should have:
-		//   /couchbase.com/couchbase-node-state/10.153.167.148:8091
-		couchbaseCluster.LocalCouchbasePort = "8091"
-
-		numRetries := 10000
-		if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
-			log.Fatalf("Failed to wait until cluster running: %v", err)
-		}
-
+	_, cmdWaitUntilRunning := arguments["wait-until-running"]
+	if cmdWaitUntilRunning {
+		waitUntilRunning(etcdServers)
+		return
 	}
+
+	_, cmdStartCouchbaseNode := arguments["start-couchbase-node"]
+	if cmdStartCouchbaseNode {
+		startCouchbaseNode(etcdServers)
+	}
+
+}
+
+func waitUntilRunning(etcdServers []string) {
+
+	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+
+	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
+		log.Fatalf("Failed to get admin credentials from etc: %v", err)
+	}
+
+	stupidPortHack(couchbaseCluster)
+
+	numRetries := 10000
+	if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
+		log.Fatalf("Failed to wait until cluster running: %v", err)
+	}
+
+}
+
+func startCouchbaseNode(etcdServers []string) {
+
+	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+
+	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
+		log.Fatalf("Failed to get admin credentials from etc: %v", err)
+	}
+
+	stupidPortHack(couchbaseCluster)
+
+	if err := couchbaseCluster.StartCouchbaseNode(); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func stupidPortHack(cluster *cbcluster.CouchbaseCluster) {
+
+	// stupid hack needed because we aren't storing the live node ports
+	// in etcd.  for ecample, in etcd we have:
+	//   /couchbase.com/couchbase-node-state/10.153.167.148
+	// but we should have:
+	//   /couchbase.com/couchbase-node-state/10.153.167.148:8091
+	cluster.LocalCouchbasePort = "8091"
 
 }
 
