@@ -1048,20 +1048,33 @@ func (c *CouchbaseCluster) LoadAdminCredsFromEtcd() error {
 
 	key := path.Join(KEY_USER_PASS)
 
-	response, err := c.etcdClient.Get(key, false, false)
-	if err != nil {
-		return fmt.Errorf("Error getting key: %v.  Err: %v", key, err)
+	sleepSeconds := 10
+
+	for i := 0; i < MAX_RETRIES_JOIN_CLUSTER; i++ {
+
+		response, err := c.etcdClient.Get(key, false, false)
+		if err != nil {
+			log.Printf("Error getting key: %v.  Err: %v.  Retrying in %v secs", key, err, sleepSeconds)
+
+			<-time.After(time.Second * time.Duration(sleepSeconds))
+
+			continue
+
+		}
+
+		userpassRaw := response.Node.Value
+		if !strings.Contains(userpassRaw, ":") {
+			return fmt.Errorf("Invalid user/pass: %v", userpassRaw)
+		}
+
+		userpassComponents := strings.Split(userpassRaw, ":")
+		c.AdminUsername = userpassComponents[0]
+		c.AdminPassword = userpassComponents[1]
+
+		return nil
+
 	}
 
-	userpassRaw := response.Node.Value
-	if !strings.Contains(userpassRaw, ":") {
-		return fmt.Errorf("Invalid user/pass: %v", userpassRaw)
-	}
-
-	userpassComponents := strings.Split(userpassRaw, ":")
-	c.AdminUsername = userpassComponents[0]
-	c.AdminPassword = userpassComponents[1]
-
-	return nil
+	return fmt.Errorf("Unable to load admin creds after several retries")
 
 }
