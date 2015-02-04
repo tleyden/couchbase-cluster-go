@@ -3,7 +3,6 @@ package cbcluster
 import (
 	"fmt"
 	"log"
-	"path"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -60,22 +59,13 @@ func (c *CouchbaseFleet) ExtractDocOptArgs(arguments map[string]interface{}) err
 	return nil
 }
 
-// Make sure that /couchbase.com/couchbase-node-state is empty
-func (c CouchbaseFleet) verifyCleanSlate() error {
-
-	key := path.Join(KEY_NODE_STATE)
-
-	response, err := c.etcdClient.Get(key, false, false)
-
-	log.Printf("resp: %v, err: %v", response, err)
-
-}
-
 func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	if err := c.verifyEnoughMachinesAvailable(); err != nil {
 		return err
 	}
+
+	// create an etcd client
 
 	// this need to check:
 	//   no etcd key for /couchbase.com
@@ -109,11 +99,14 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 // the user asked to kick off is LTE number of machines on cluster
 func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 
+	log.Printf("verifyEnoughMachinesAvailable()")
+
 	endpointUrl := "http://localhost:49153/v1-alpha/machines"
 
 	// {"machines":[{"id":"a91c394439734375aa256d7da1410132","primaryIP":"172.17.8.101"}]}
 	jsonMap := map[string]interface{}{}
-	if err := getJsonData(endpointUrl, jsonMap); err != nil {
+	if err := getJsonData(endpointUrl, &jsonMap); err != nil {
+		log.Printf("getJsonData error: %v", err)
 		return err
 	}
 
@@ -126,6 +119,8 @@ func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 	if len(machineList) < c.NumNodes {
 		return fmt.Errorf("User requested %v nodes, only %v available", c.NumNodes, len(machineList))
 	}
+
+	log.Printf("/verifyEnoughMachinesAvailable()")
 
 	return nil
 }
