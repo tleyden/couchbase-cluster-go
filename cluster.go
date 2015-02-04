@@ -1,7 +1,6 @@
 package cbcluster
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -862,27 +861,10 @@ func (c CouchbaseCluster) IsRebalancing(liveNodeIp string) (bool, error) {
 
 func (c CouchbaseCluster) getJsonData(endpointUrl string, into interface{}) error {
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", endpointUrl, nil)
-	if err != nil {
-		return err
+	middleware := func(req *http.Request) {
+		req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
 	}
-
-	req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Failed to GET %v.  Status code: %v", endpointUrl, resp.StatusCode)
-	}
-
-	d := json.NewDecoder(resp.Body)
-	return d.Decode(into)
+	return getJsonDataMiddleware(endpointUrl, into, middleware)
 
 }
 
