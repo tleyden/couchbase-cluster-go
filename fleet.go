@@ -3,6 +3,7 @@ package cbcluster
 import (
 	"fmt"
 	"log"
+	"path"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -125,7 +126,14 @@ func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 	return nil
 }
 
+// Make sure that /couchbase.com/couchbase-node-state is empty
 func (c CouchbaseFleet) verifyCleanSlate() error {
+
+	key := path.Join(KEY_NODE_STATE)
+
+	response, err := c.etcdClient.Get(key, false, false)
+
+	log.Printf("resp: %v, err: %v", response, err)
 	return nil
 }
 
