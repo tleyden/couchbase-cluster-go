@@ -99,11 +99,14 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 // the user asked to kick off is LTE number of machines on cluster
 func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 
+	log.Printf("verifyEnoughMachinesAvailable()")
+
 	endpointUrl := "http://localhost:49153/v1-alpha/machines"
 
 	// {"machines":[{"id":"a91c394439734375aa256d7da1410132","primaryIP":"172.17.8.101"}]}
 	jsonMap := map[string]interface{}{}
-	if err := getJsonData(endpointUrl, jsonMap); err != nil {
+	if err := getJsonData(endpointUrl, &jsonMap); err != nil {
+		log.Printf("getJsonData error: %v", err)
 		return err
 	}
 
@@ -116,6 +119,8 @@ func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 	if len(machineList) < c.NumNodes {
 		return fmt.Errorf("User requested %v nodes, only %v available", c.NumNodes, len(machineList))
 	}
+
+	log.Printf("/verifyEnoughMachinesAvailable()")
 
 	return nil
 }

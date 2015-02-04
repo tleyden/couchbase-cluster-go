@@ -2,6 +2,7 @@ package cbcluster
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -49,12 +50,17 @@ func ExtractIntArg(docOptParsed map[string]interface{}, argToExtract string) (in
 		return -1, fmt.Errorf("Did not find arg: %v", argToExtract)
 	}
 
-	intVal, ok := rawVal.(int)
+	stringVal, ok := rawVal.(string)
 	if !ok {
 		return -1, fmt.Errorf("Invalid type for %v", argToExtract)
 	}
 
-	return intVal, nil
+	intVal, err := strconv.ParseInt(stringVal, 10, 64)
+	if err != nil {
+		return -1, err
+	}
+
+	return int(intVal), nil
 
 }
 
