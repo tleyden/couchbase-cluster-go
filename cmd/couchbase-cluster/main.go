@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"strings"
 
 	"github.com/docopt/docopt-go"
 	"github.com/tleyden/couchbase-cluster-go"
@@ -22,14 +21,14 @@ Options:
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost`
 
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
-	etcdServers := extractEtcdServerList(arguments)
+	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
 
-	if commandEnabled(arguments, "wait-until-running") {
+	if cbcluster.IsCommandEnabled(arguments, "wait-until-running") {
 		waitUntilRunning(etcdServers)
 		return
 	}
 
-	if commandEnabled(arguments, "start-couchbase-node") {
+	if cbcluster.IsCommandEnabled(arguments, "start-couchbase-node") {
 
 		localIp, found := arguments["--local-ip"]
 		if !found {
@@ -85,33 +84,4 @@ func stupidPortHack(cluster *cbcluster.CouchbaseCluster) {
 	//   /couchbase.com/couchbase-node-state/10.153.167.148:8091
 	cluster.LocalCouchbasePort = "8091"
 
-}
-
-// convert from comma separated list to a string slice
-func extractEtcdServerList(docOptParsed map[string]interface{}) []string {
-
-	rawServerList, found := docOptParsed["--etcd-servers"]
-	if !found {
-		return nil
-	}
-
-	rawServerListStr, ok := rawServerList.(string)
-	if !ok {
-		return nil
-	}
-
-	return strings.Split(rawServerListStr, ",")
-
-}
-
-func commandEnabled(arguments map[string]interface{}, commandKey string) bool {
-	val, ok := arguments[commandKey]
-	if !ok {
-		return false
-	}
-	boolVal, ok := val.(bool)
-	if !ok {
-		return false
-	}
-	return boolVal
 }
