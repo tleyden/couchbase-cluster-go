@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"strings"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -131,12 +132,29 @@ func (c CouchbaseFleet) verifyCleanSlate() error {
 
 	key := path.Join(KEY_NODE_STATE)
 
-	response, err := c.etcdClient.Get(key, false, false)
+	_, err := c.etcdClient.Get(key, false, false)
 
-	log.Printf("resp: %v, err: %v", response, err)
-	return nil
+	// if that key exists, there is residue and we should abort
+	if err == nil {
+		return fmt.Errorf("Found residue -- key: %v in etcd.  Destroy cluster first", KEY_NODE_STATE)
+	}
+
+	// if we get an error with "key not found", then we are starting
+	// with a clean slate
+	if strings.Contains(err.String(), "Key not found") {
+		return nil
+	}
+
+	// if we got a different error rather than "Key not found", treat that as
+	// an error as well.
+	return fmt.Errorf("Unexpected error trying to get key: %v: %v", KEY_NODE_STATE, err)
+
 }
 
 func (c CouchbaseFleet) setUserNamePassEtcd() error {
-	return nil
+
+	_, err := c.etcdClient.Set(KEY_USER_PASS, c.UserPass, 0)
+
+	return err
+
 }
