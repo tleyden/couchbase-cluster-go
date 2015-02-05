@@ -141,7 +141,7 @@ func (c CouchbaseFleet) verifyCleanSlate() error {
 
 	// if we get an error with "key not found", then we are starting
 	// with a clean slate
-	if strings.Contains(err.String(), "Key not found") {
+	if strings.Contains(err.Error(), "Key not found") {
 		return nil
 	}
 
