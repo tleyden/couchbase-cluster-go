@@ -1,20 +1,28 @@
 package cbcluster
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"path"
 	"strings"
 
 	"github.com/coreos/go-etcd/etcd"
 )
 
+const (
+	FLEET_API_ENDPOINT = "http://localhost:49153/v1-alpha"
+)
+
 type CouchbaseFleet struct {
-	etcdClient  *etcd.Client
-	UserPass    string
-	NumNodes    int
-	CbVersion   string
-	EtcdServers []string
+	etcdClient          *etcd.Client
+	UserPass            string
+	NumNodes            int
+	CbVersion           string
+	EtcdServers         []string
+	SkipCleanSlateCheck bool
 }
 
 func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {
@@ -57,6 +65,7 @@ func (c *CouchbaseFleet) ExtractDocOptArgs(arguments map[string]interface{}) err
 	c.UserPass = userpass
 	c.NumNodes = numnodes
 	c.CbVersion = cbVersion
+	c.SkipCleanSlateCheck = ExtractSkipCheckCleanState(arguments)
 
 	return nil
 }
@@ -82,6 +91,36 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	// run fleet template through templating engine, passing couchbase version,
 	// and save files to temp directory
+	fleetUnitJson := `
+{
+  "desiredState": "launched",
+  "options": [{"section": "Service", "name": "ExecStart", "value": "/usr/bin/sleep 30000"}]
+}
+`
+
+	client := &http.Client{}
+
+	endpointUrl := fmt.Sprintf("%v/units/test.service", FLEET_API_ENDPOINT)
+
+	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	bodyStr, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("response body: %v", string(bodyStr))
 
 	// call fleetctl submit on the fleet files
 	// 	   fleetctl submit couchbase_node@.service
@@ -103,7 +142,7 @@ func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 
 	log.Printf("verifyEnoughMachinesAvailable()")
 
-	endpointUrl := "http://localhost:49153/v1-alpha/machines"
+	endpointUrl := fmt.Sprintf("%v/machines", FLEET_API_ENDPOINT)
 
 	// {"machines":[{"id":"a91c394439734375aa256d7da1410132","primaryIP":"172.17.8.101"}]}
 	jsonMap := map[string]interface{}{}
@@ -129,6 +168,10 @@ func (c CouchbaseFleet) verifyEnoughMachinesAvailable() error {
 
 // Make sure that /couchbase.com/couchbase-node-state is empty
 func (c CouchbaseFleet) verifyCleanSlate() error {
+
+	if c.SkipCleanSlateCheck {
+		return nil
+	}
 
 	key := path.Join(KEY_NODE_STATE)
 

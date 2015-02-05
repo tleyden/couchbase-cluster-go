@@ -80,6 +80,28 @@ func ExtractStringArg(docOptParsed map[string]interface{}, argToExtract string) 
 
 }
 
+func ExtractBoolArg(docOptParsed map[string]interface{}, argToExtract string) bool {
+
+	rawVal, found := docOptParsed[argToExtract]
+	if !found {
+		return false
+	}
+
+	boolVal, ok := rawVal.(bool)
+	if !ok {
+		return false
+	}
+
+	return boolVal
+
+}
+
+func ExtractSkipCheckCleanState(docOptParsed map[string]interface{}) bool {
+
+	return ExtractBoolArg(docOptParsed, "--skip-clean-slate-check")
+
+}
+
 func ExtractNumNodes(docOptParsed map[string]interface{}) (int, error) {
 
 	return ExtractIntArg(docOptParsed, "--num-nodes")
