@@ -89,86 +89,17 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		return err
 	}
 
-	// run fleet template through templating engine, passing couchbase version,
-	// and save files to temp directory
-	fleetUnitJson := `
-{
-    "desiredState":"launched",
-    "options":[
-        {
-            "section":"Service",
-            "name":"TimeoutStartSec",
-            "value":"0"
-        },
-        {
-            "section":"Service",
-            "name":"EnvironmentFile",
-            "value":"/etc/environment"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker kill couchbase"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker rm couchbase"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1 couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStop",
-            "value":"/usr/bin/docker stop couchbase"
-        },
-        {
-            "section":"X-Fleet",
-            "name":"Conflicts",
-            "value":"couchbase_node*.service"
-        }
-    ]
-}
-`
+	for i := 1; i < c.NumNodes+1; i++ {
 
-	client := &http.Client{}
+		fleetUnitJson, err := c.generateFleetUnitJson()
+		if err != nil {
+			return err
+		}
+		if err := submitAndLaunchFleetUnitN(i, fleetUnitJson); err != nil {
+			return err
+		}
 
-	// TODO: don't hardcode 1
-	endpointUrl := fmt.Sprintf("%v/units/couchbase_node@1.service", FLEET_API_ENDPOINT)
-
-	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
-	if err != nil {
-		return err
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	bodyStr, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("response body: %v", string(bodyStr))
-
-	// call fleetctl submit on the fleet files
-	// 	   fleetctl submit couchbase_node@.service
-
-	// call fleetctl start to start the N servers
-	// 	   fleetctl start "couchbase_node@$i.service"
 
 	// wait until X nodes are up in cluster
 
@@ -241,5 +172,92 @@ func (c CouchbaseFleet) setUserNamePassEtcd() error {
 	_, err := c.etcdClient.Set(KEY_USER_PASS, c.UserPass, 0)
 
 	return err
+
+}
+
+func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
+	// run fleet template through templating engine, passing couchbase version,
+	// and save files to temp directory
+	fleetUnitJsonTemplate := `
+{
+    "desiredState":"launched",
+    "options":[
+        {
+            "section":"Service",
+            "name":"TimeoutStartSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
+            "name":"EnvironmentFile",
+            "value":"/etc/environment"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker kill couchbase"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker rm couchbase"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStart",
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1 couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"/usr/bin/docker stop couchbase"
+        },
+        {
+            "section":"X-Fleet",
+            "name":"Conflicts",
+            "value":"couchbase_node*.service"
+        }
+    ]
+}
+`
+	return fleetUnitJsonTemplate, nil
+
+}
+
+func submitAndLaunchFleetUnitN(unitNumber int, fleetUnitJson string) error {
+
+	client := &http.Client{}
+
+	endpointUrl := fmt.Sprintf("%v/units/couchbase_node@%v.service", FLEET_API_ENDPOINT, unitNumber)
+
+	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	bodyStr, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("response body: %v", string(bodyStr))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("Unexpected status code in response")
+	}
+
+	return nil
 
 }
