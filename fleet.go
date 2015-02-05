@@ -3,6 +3,7 @@ package cbcluster
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,6 +24,12 @@ type CouchbaseFleet struct {
 	CbVersion           string
 	EtcdServers         []string
 	SkipCleanSlateCheck bool
+}
+
+// this is used in the fleet template.
+// TODO: should use anon struct
+type FleetParams struct {
+	CB_VERSION string
 }
 
 func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {
@@ -205,12 +212,12 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1"
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}"
         },
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1 couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }} couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
@@ -225,7 +232,25 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
     ]
 }
 `
-	return fleetUnitJsonTemplate, nil
+
+	tmpl, err := template.New("couchbase_fleet").Parse(fleetUnitJsonTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	params := FleetParams{
+		CB_VERSION: c.CbVersion,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
 
 }
 
