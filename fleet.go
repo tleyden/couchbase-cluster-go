@@ -93,14 +93,56 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	// and save files to temp directory
 	fleetUnitJson := `
 {
-  "desiredState": "launched",
-  "options": [{"section": "Service", "name": "ExecStart", "value": "/usr/bin/sleep 30000"}]
+    "desiredState":"launched",
+    "options":[
+        {
+            "section":"Service",
+            "name":"TimeoutStartSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
+            "name":"EnvironmentFile",
+            "value":"/etc/environment"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker kill couchbase"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker rm couchbase"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStart",
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1 couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"/usr/bin/docker stop couchbase"
+        },
+        {
+            "section":"X-Fleet",
+            "name":"Conflicts",
+            "value":"couchbase_node*.service"
+        }
+    ]
 }
 `
 
 	client := &http.Client{}
 
-	endpointUrl := fmt.Sprintf("%v/units/test.service", FLEET_API_ENDPOINT)
+	// TODO: don't hardcode 1
+	endpointUrl := fmt.Sprintf("%v/units/couchbase_node@1.service", FLEET_API_ENDPOINT)
 
 	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
 	if err != nil {
