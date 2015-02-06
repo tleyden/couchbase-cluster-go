@@ -615,15 +615,20 @@ func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, e
 	return false, nil
 }
 
-// Check if all nodes in the cluster are healthy.  Connect to liveNodeIp.
-func (c CouchbaseCluster) CheckAllNodesClusterHealthy(liveNodeIp string) (bool, error) {
+// Check if at least numNodes nodes in the cluster are healthy.  Connect to liveNodeIp.
+// To check all nodes without specifying a specific number of nodes, pass -1 for numNodes.
+func (c CouchbaseCluster) CheckNumNodesClusterHealthy(numNodes int, liveNodeIp string) (bool, error) {
 
-	log.Printf("CheckAllNodesClusterHealthy()")
+	log.Printf("CheckNumNodesClusterHealthy()")
 	nodes, err := c.GetClusterNodes(liveNodeIp)
 	if err != nil {
 		return false, err
 	}
-	log.Printf("CheckAllNodesClusterHealthy: %+v", nodes)
+
+	if numNodes != -1 && len(nodes) < numNodes {
+		log.Printf("Not enough nodes are up.  Expected %v, got %v", numNodes, len(nodes))
+		return false, nil
+	}
 
 	for _, node := range nodes {
 
@@ -646,6 +651,13 @@ func (c CouchbaseCluster) CheckAllNodesClusterHealthy(liveNodeIp string) (bool, 
 
 	log.Printf("All cluster nodes appear to be healthy")
 	return true, nil
+
+}
+
+// Check if all nodes in the cluster are healthy.  Connect to liveNodeIp.
+func (c CouchbaseCluster) CheckAllNodesClusterHealthy(liveNodeIp string) (bool, error) {
+
+	return c.CheckNumNodesClusterHealthy(-1, liveNodeIp)
 
 }
 
@@ -1043,6 +1055,37 @@ func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
 }
 
+func (c CouchbaseCluster) WaitUntilNumNodesRunning(numNodes, maxAttempts int) error {
+
+	worker := func() (bool, error) {
+		liveNodeIp, err := c.FindLiveNode()
+		if err != nil || liveNodeIp == "" {
+			log.Printf("FindLiveNode returned err: %v or empty ip", err)
+			return false, nil
+		}
+		log.Printf("Connecting to liveNodeIp: %v", liveNodeIp)
+
+		ok, err := c.CheckNumNodesClusterHealthy(numNodes, liveNodeIp)
+		if err != nil || !ok {
+			log.Printf("CheckAllNodesClusterHealthy checked failed.  ok: %v err: %v", ok, err)
+			return false, nil
+		}
+		return true, nil
+
+	}
+
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		sleepSeconds := 10 * numAttempts
+		return true, sleepSeconds
+	}
+
+	return RetryLoop(worker, sleeper)
+
+}
+
 // Find the admin credentials in etcd under /couchbase.com/userpass
 // and update this CouchbaseCluster's fields accordingly
 func (c *CouchbaseCluster) LoadAdminCredsFromEtcd() error {
@@ -1092,6 +1135,23 @@ func WaitUntilCBClusterRunning(etcdServers []string) {
 
 	numRetries := 10000
 	if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
+		log.Fatalf("Failed to wait until cluster running: %v", err)
+	}
+
+}
+
+func WaitUntilNumNodesRunning(numNodes int, etcdServers []string) {
+
+	couchbaseCluster := NewCouchbaseCluster(etcdServers)
+
+	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
+		log.Fatalf("Failed to get admin credentials from etc: %v", err)
+	}
+
+	StupidPortHack(couchbaseCluster)
+
+	numRetries := 10000
+	if err := couchbaseCluster.WaitUntilNumNodesRunning(numNodes, numRetries); err != nil {
 		log.Fatalf("Failed to wait until cluster running: %v", err)
 	}
 
