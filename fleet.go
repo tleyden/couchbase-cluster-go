@@ -86,6 +86,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	}
 
 	// wait until X nodes are up in cluster
+	WaitUntilCBClusterRunning(c.EtcdServers)
 
 	// let user know its up
 
