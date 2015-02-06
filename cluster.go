@@ -975,52 +975,66 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 
 }
 
+// A retry sleeper is called back by the retry loop and passed
+// the current retryCount, and should return the amount of seconds
+// that the retry should sleep.
+type RetrySleeper func(retryCount int) (bool, int)
+
+// A RetryWorker encapsulates the work being done in a Retry Loop
+type RetryWorker func() (bool, error)
+
+func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
+
+	numAttempts := 1
+
+	for {
+		workerFinished, err := worker()
+		if err != nil {
+			return err
+		}
+
+		if workerFinished {
+			return nil
+		}
+
+		sleeper(numAttempts)
+
+		numAttempts += 1
+
+	}
+}
+
 // Connect to etcd and grap the first node that is up
 // Connect to Couchbase Cluster via REST api and get node states
 // If all nodes are healthy, then return.  Otherwise retry loop.
-func (c CouchbaseCluster) WaitUntilClusterRunning(numRetries int) error {
+func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
-	sleepSeconds := 0
-
-	for i := 0; i < numRetries; i++ {
-
-		sleepSeconds += 10
-
-		log.Printf("Calling FindLiveNode()")
-
+	worker := func() (bool, error) {
 		liveNodeIp, err := c.FindLiveNode()
 		if err != nil || liveNodeIp == "" {
-
 			log.Printf("FindLiveNode returned err: %v or empty ip", err)
-
-			log.Printf("Sleeping for %vs", sleepSeconds)
-
-			<-time.After(time.Second * time.Duration(sleepSeconds))
-
-			continue
-
+			return false, nil
 		}
-
 		log.Printf("Connecting to liveNodeIp: %v", liveNodeIp)
 
 		ok, err := c.CheckAllNodesClusterHealthy(liveNodeIp)
 		if err != nil || !ok {
-
 			log.Printf("CheckAllNodesClusterHealthy checked failed.  ok: %v err: %v", ok, err)
-
-			log.Printf("Sleeping for %vs", sleepSeconds)
-
-			<-time.After(time.Second * time.Duration(sleepSeconds))
-
-			continue
-
+			return false, nil
 		}
-
-		return nil
+		return true, nil
 
 	}
 
-	return fmt.Errorf("Gave up waiting for cluster to be healthy")
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		sleepSeconds := 10 * numAttempts
+		return true, sleepSeconds
+	}
+
+	return RetryLoop(worker, sleeper)
 
 }
 
