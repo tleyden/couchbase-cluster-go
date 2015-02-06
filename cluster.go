@@ -734,11 +734,8 @@ func (c CouchbaseCluster) GetClusterNodes(liveNodeIp string) ([]interface{}, err
 	if err := c.getJsonData(endpointUrl, &jsonMap); err != nil {
 		return nil, err
 	}
-	log.Printf("GetClusterNodes jsonMap: %+v", jsonMap)
 
 	nodes := jsonMap["nodes"]
-
-	log.Printf("GetClusterNodes nodes: %+v", nodes)
 
 	nodeMaps, ok := nodes.([]interface{})
 	if !ok {
