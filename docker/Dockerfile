@@ -6,11 +6,7 @@ MAINTAINER Traun Leyden <tleyden@couchbase.com>
 ENV GOPATH /opt/go
 ENV GOROOT /usr/local/go
 
-# this container expects this to be mounted as a volume
-# via docker run -v /usr/bin:/mnt/hostos-usr-bin
-ENV HOST_USR_BIN /mnt/hostos-usr-bin
-
-ENV PATH $PATH:$GOPATH/bin:$HOST_USR_BIN:$GOROOT/bin
+ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
 
 # Get dependencies
 RUN apt-get update && apt-get install -y \
