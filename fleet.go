@@ -54,29 +54,6 @@ func (c *CouchbaseFleet) ConnectToEtcd() {
 	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 }
 
-func (c *CouchbaseFleet) ExtractDocOptArgs(arguments map[string]interface{}) error {
-
-	userpass, err := ExtractUserPass(arguments)
-	if err != nil {
-		return err
-	}
-	numnodes, err := ExtractNumNodes(arguments)
-	if err != nil {
-		return err
-	}
-	cbVersion, err := ExtractCbVersion(arguments)
-	if err != nil {
-		return err
-	}
-
-	c.UserPass = userpass
-	c.NumNodes = numnodes
-	c.CbVersion = cbVersion
-	c.SkipCleanSlateCheck = ExtractSkipCheckCleanState(arguments)
-
-	return nil
-}
-
 func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	if err := c.verifyEnoughMachinesAvailable(); err != nil {
@@ -114,6 +91,29 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	return nil
 
+}
+
+func (c *CouchbaseFleet) ExtractDocOptArgs(arguments map[string]interface{}) error {
+
+	userpass, err := ExtractUserPass(arguments)
+	if err != nil {
+		return err
+	}
+	numnodes, err := ExtractNumNodes(arguments)
+	if err != nil {
+		return err
+	}
+	cbVersion, err := ExtractCbVersion(arguments)
+	if err != nil {
+		return err
+	}
+
+	c.UserPass = userpass
+	c.NumNodes = numnodes
+	c.CbVersion = cbVersion
+	c.SkipCleanSlateCheck = ExtractSkipCheckCleanState(arguments)
+
+	return nil
 }
 
 // call fleetctl list-machines and verify that the number of nodes
