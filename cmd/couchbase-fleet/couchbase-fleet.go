@@ -35,6 +35,8 @@ Options:
 		return
 	}
 
+	log.Printf("Nothing to do!")
+
 }
 
 func launchCouchbaseServer(arguments map[string]interface{}) error {
