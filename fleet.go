@@ -22,6 +22,7 @@ type CouchbaseFleet struct {
 	UserPass            string
 	NumNodes            int
 	CbVersion           string
+	ContainerTag        string // Docker tag
 	EtcdServers         []string
 	SkipCleanSlateCheck bool
 }
@@ -115,6 +116,7 @@ func (c *CouchbaseFleet) ExtractDocOptArgs(arguments map[string]interface{}) err
 	c.UserPass = userpass
 	c.NumNodes = numnodes
 	c.CbVersion = cbVersion
+	c.ContainerTag = ExtractDockerTagOrLatest(arguments)
 	c.SkipCleanSlateCheck = ExtractSkipCheckCleanState(arguments)
 
 	return nil
@@ -216,12 +218,12 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}"
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }}"
         },
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }} couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
@@ -243,7 +245,8 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 	}
 
 	params := FleetParams{
-		CB_VERSION: c.CbVersion,
+		CB_VERSION:    c.CbVersion,
+		CONTAINER_TAG: c.ContainerTag,
 	}
 
 	out := &bytes.Buffer{}

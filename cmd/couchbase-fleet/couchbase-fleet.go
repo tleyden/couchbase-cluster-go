@@ -12,7 +12,7 @@ func main() {
 	usage := `Couchbase-Fleet.
 
 Usage:
-  couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--skip-clean-slate-check]
+  couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<docker-tag>] [--skip-clean-slate-check]
   couchbase-fleet -h | --help
 
 Options:
@@ -22,6 +22,7 @@ Options:
   --userpass <user:pass> the username and password as a single string, delimited by a colon (:)
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhos
   --skip-clean-slate-check  if present, will skip the check that we are starting from clean state
+  --docker-tag  if present, use this docker tag for spawned containers, otherwise, default to "latest".
 
 `
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Fleet", false)
