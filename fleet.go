@@ -30,7 +30,8 @@ type CouchbaseFleet struct {
 // this is used in the fleet template.
 // TODO: should use anon struct
 type FleetParams struct {
-	CB_VERSION string
+	CB_VERSION    string
+	CONTAINER_TAG string
 }
 
 func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {

@@ -42,8 +42,10 @@ func ExtractUserPass(docOptParsed map[string]interface{}) (string, error) {
 func ExtractDockerTagOrLatest(docOptParsed map[string]interface{}) string {
 	dockerTag, err := ExtractStringArg(docOptParsed, "--docker-tag")
 	if err != nil || dockerTag == "" {
-		return "latest", nil
+		return "latest"
 	}
+	return dockerTag
+
 }
 
 func ExtractCbVersion(docOptParsed map[string]interface{}) (string, error) {
