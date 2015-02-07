@@ -61,6 +61,9 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	if err != nil {
 		return err
 	}
+	if configUrl == "" {
+		return fmt.Errorf("Missing or empty config url")
+	}
 	s.ConfigUrl = configUrl
 
 	commitOrBranch, _ := ExtractStringArg(arguments, "--sync-gw-commit")
