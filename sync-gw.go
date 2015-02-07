@@ -66,6 +66,9 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	commitOrBranch, _ := ExtractStringArg(arguments, "--sync-gw-commit")
 	if commitOrBranch != "" {
 		s.CommitOrBranch = commitOrBranch
+	} else {
+		// "image" means: use master branch commit when docker image built
+		s.CommitOrBranch = "image"
 	}
 
 	createBucketName, _ := ExtractStringArg(arguments, "--create-bucket")
