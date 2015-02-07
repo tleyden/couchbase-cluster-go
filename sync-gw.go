@@ -1,9 +1,11 @@
 package cbcluster
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/url"
+	"text/template"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -110,19 +112,112 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 
 func (s SyncGwCluster) kickOffFleetUnits() error {
 
+	fleetUnitJson, err := s.generateFleetUnitJson()
+	if err != nil {
+		return err
+	}
+
+	for i := 1; i < s.NumNodes+1; i++ {
+
+		if err := submitAndLaunchFleetUnitN(i, "sync_gw_node", fleetUnitJson); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
+
+	fleetUnitJsonTemplate := `
+{
+    "desiredState":"launched",
+    "options":[
+        {
+            "section":"Service",
+            "name":"TimeoutStartSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
+            "name":"EnvironmentFile",
+            "value":"/etc/environment"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker kill sync_gw"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker rm sync_gw"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }}"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker run --net=host tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }} couchbase-cluster-wrapper wait-until-running"
+        },
+
+        {
+            "section":"Service",
+            "name":"ExecStart",
+            "value":"/bin/bash -c 'SYNC_GW_COMMIT=$(etcdctl get /couchbase.com/sync-gateway/commit);  SYNC_GW_CONFIG=$(etcdctl get /couchbase.com/sync-gateway/config); /usr/bin/docker run --name sync_gw --net=host tleyden5iwx/sync-gateway-coreos sync-gw-start -c $SYNC_GW_COMMIT -g $SYNC_GW_CONFIG'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"/usr/bin/docker stop sync_gw"
+        },
+        {
+            "section":"X-Fleet",
+            "name":"Conflicts",
+            "value":"sync_gw_node*.service"
+        }
+    ]
+}
+`
+
+	tmpl, err := template.New("sgw_fleet").Parse(fleetUnitJsonTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	params := FleetParams{
+		CONTAINER_TAG: s.ContainerTag,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
 }
 
 func (s SyncGwCluster) addValuesEtcd() error {
 
 	// add values to etcd
-	_, err := c.etcdClient.Set(KEY_SYNC_GW_CONFIG, c.ConfigUrl, 0)
+	_, err := s.etcdClient.Set(KEY_SYNC_GW_CONFIG, s.ConfigUrl, 0)
 	if err != nil {
 		return err
 	}
-	_, err := c.etcdClient.Set(KEY_SYNC_GW_COMMIT, c.CommitOrBranch, 0)
+	_, err = s.etcdClient.Set(KEY_SYNC_GW_COMMIT, s.CommitOrBranch, 0)
 	if err != nil {
 		return err
 	}
+
+	return nil
 
 }
 

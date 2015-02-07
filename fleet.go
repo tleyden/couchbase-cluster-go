@@ -75,13 +75,18 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		return err
 	}
 
+	fleetUnitJson, err := c.generateFleetUnitJson()
+	if err != nil {
+		return err
+	}
+
 	for i := 1; i < c.NumNodes+1; i++ {
 
-		fleetUnitJson, err := c.generateFleetUnitJson()
-		if err != nil {
-			return err
-		}
-		if err := submitAndLaunchFleetUnitN(i, fleetUnitJson); err != nil {
+		if err := submitAndLaunchFleetUnitN(
+			i,
+			"couchbase_node",
+			fleetUnitJson,
+		); err != nil {
 			return err
 		}
 
@@ -190,8 +195,7 @@ func (c CouchbaseFleet) setUserNamePassEtcd() error {
 }
 
 func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
-	// run fleet template through templating engine, passing couchbase version,
-	// and save files to temp directory
+
 	fleetUnitJsonTemplate := `
 {
     "desiredState":"launched",
@@ -262,11 +266,11 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 
 }
 
-func submitAndLaunchFleetUnitN(unitNumber int, fleetUnitJson string) error {
+func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
 	client := &http.Client{}
 
-	endpointUrl := fmt.Sprintf("%v/units/couchbase_node@%v.service", FLEET_API_ENDPOINT, unitNumber)
+	endpointUrl := fmt.Sprintf("%v/units/%v@%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
 
 	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
 	if err != nil {
