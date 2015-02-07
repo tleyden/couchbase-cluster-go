@@ -12,7 +12,7 @@ func main() {
 	usage := `Sync-Gw-Cluster.
 
 Usage:
-  sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--sync-gw-commit=<branch-or-commit>] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] 
+  sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--sync-gw-commit=<branch-or-commit>] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] [--create-bucket-replicas=<replica-count>] [--etcd-servers=<server-list>] [--docker-tag=<dt>]
   sync-gw-cluster -h | --help
 
 Options:
@@ -22,6 +22,10 @@ Options:
   --sync-gw-commit=<branch-or-commit> the branch or commit of sync gw to use, defaults to "image", which is the master branch at the time the docker image was built.
   --create-bucket=<bucket-name> create a bucket on couchbase server with the given name 
   --create-bucket-size=<bucket-size-mb> if creating a bucket, use this size in MB
+  --create-bucket-replicas=<replica-count> if creating a bucket, use this replica count (defaults to 1)
+  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhos
+  --docker-tag=<dt>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
+
 `
 
 	arguments, err := docopt.Parse(usage, nil, true, "Sync-Gw-Cluster", false)
@@ -40,12 +44,13 @@ Options:
 
 func launchSyncGateway(arguments map[string]interface{}) error {
 
-	// create bucket (if user asked for this)
+	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
 
-	// # add values to etcd
-	// etcdctl set /couchbase.com/sync-gateway/config "$configFileOrURL"
-	// etcdctl set /couchbase.com/sync-gateway/commit "$commit"
+	syncGwCluster := cbcluster.NewSyncGwCluster(etcdServers)
+	if err := syncGwCluster.ExtractDocOptArgs(arguments); err != nil {
+		return err
+	}
 
-	// kick off fleet units
+	return syncGwCluster.LaunchSyncGateway()
 
 }

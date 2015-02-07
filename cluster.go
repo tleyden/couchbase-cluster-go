@@ -493,8 +493,6 @@ func (c CouchbaseCluster) CreateDefaultBucket() error {
 		return nil
 	}
 
-	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
-
 	data := url.Values{
 		"name":          {"default"},
 		"ramQuotaMB":    {c.defaultBucketRamQuotaMB},
@@ -502,6 +500,14 @@ func (c CouchbaseCluster) CreateDefaultBucket() error {
 		"replicaNumber": {c.defaultBucketReplicaNumber},
 		"proxyPort":     {"11215"},
 	}
+
+	return c.CreateBucket(data)
+
+}
+
+func (c CouchbaseCluster) CreateBucket(data url.Values) error {
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
 	return c.POST(false, endpointUrl, data)
 
