@@ -111,6 +111,13 @@ func (s SyncGwCluster) createBucketIfNeeded() error {
 		return err
 	}
 
+	liveNodeIp, err := cb.FindLiveNode()
+	if err != nil {
+		return err
+	}
+	cb.LocalCouchbaseIp = liveNodeIp
+	cb.StupidPortHack()
+
 	ramQuotaMB := fmt.Sprintf("%v", s.CreateBucketSize)
 	replicaNumber := fmt.Sprintf("%v", s.CreateBucketReplicaCount)
 
