@@ -40,7 +40,7 @@ func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {
 
 	if len(etcdServers) > 0 {
 		c.EtcdServers = etcdServers
-		log.Printf("Connect to explict etcd servers: %v", c.EtcdServers)
+		log.Printf("Connect to explicit etcd servers: %v", c.EtcdServers)
 	} else {
 		c.EtcdServers = []string{}
 		log.Printf("Connect to etcd on localhost")
