@@ -68,9 +68,15 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 
 	createBucketSize, _ := ExtractIntArg(arguments, "--create-bucket-size")
 	s.CreateBucketSize = createBucketSize
+	if s.CreateBucketSize == 0 {
+		s.CreateBucketSize = 512
+	}
 
 	createBucketReplicaCount, _ := ExtractIntArg(arguments, "--create-bucket-replicas")
 	s.CreateBucketReplicaCount = createBucketReplicaCount
+	if s.CreateBucketReplicaCount == 0 {
+		s.CreateBucketReplicaCount = 1
+	}
 
 	s.ContainerTag = ExtractDockerTagOrLatest(arguments)
 
