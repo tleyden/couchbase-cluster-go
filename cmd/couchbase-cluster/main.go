@@ -13,7 +13,7 @@ func main() {
 
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
-  couchbase-cluster start-couchbase-node --local-ip=<ip>
+  couchbase-cluster start-couchbase-node --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
 
 Options:
