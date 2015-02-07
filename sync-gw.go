@@ -8,6 +8,11 @@ import (
 	"github.com/coreos/go-etcd/etcd"
 )
 
+const (
+	KEY_SYNC_GW_CONFIG = "/couchbase.com/sync-gateway/config"
+	KEY_SYNC_GW_COMMIT = "/couchbase.com/sync-gateway/commit"
+)
+
 type SyncGwCluster struct {
 	etcdClient               *etcd.Client
 	EtcdServers              []string
@@ -90,13 +95,35 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 		return err
 	}
 
-	// # add values to etcd
-	// etcdctl set /couchbase.com/sync-gateway/config "$configFileOrURL"
-	// etcdctl set /couchbase.com/sync-gateway/commit "$commit"
+	// stash some values into etcd
+	if err := s.addValuesEtcd(); err != nil {
+		return err
+	}
 
 	// kick off fleet units
+	if err := s.kickOffFleetUnits(); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (s SyncGwCluster) kickOffFleetUnits() error {
+
+}
+
+func (s SyncGwCluster) addValuesEtcd() error {
+
+	// add values to etcd
+	_, err := c.etcdClient.Set(KEY_SYNC_GW_CONFIG, c.ConfigUrl, 0)
+	if err != nil {
+		return err
+	}
+	_, err := c.etcdClient.Set(KEY_SYNC_GW_COMMIT, c.CommitOrBranch, 0)
+	if err != nil {
+		return err
+	}
+
 }
 
 func (s SyncGwCluster) createBucketIfNeeded() error {
