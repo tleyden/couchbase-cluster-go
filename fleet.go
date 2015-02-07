@@ -198,7 +198,7 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 
 	fleetUnitJsonTemplate := `
 {
-    "desiredState":"launched",
+    "desiredState":"inactive",
     "options":[
         {
             "section":"Service",
@@ -268,11 +268,55 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 
 func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
-	client := &http.Client{}
+	if err := submitFleetUnit(unitName, fleetUnitJson); err != nil {
+		return err
+	}
+
+	if err := launchFleetUnitN(unitName, unitNumber, fleetUnitJson); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func submitFleetUnit(unitName, fleetUnitJson string) error {
+
+	log.Printf("Submit fleet unit for %v", unitName)
+
+	endpointUrl := fmt.Sprintf("%v/units/%v@.service", FLEET_API_ENDPOINT, unitName)
+
+	return PUT(endpointUrl, fleetUnitJson)
+
+}
+
+func launchFleetUnitN(unitName string, unitNumber int, fleetUnitJson string) error {
+
+	// this is clunky due to:
+	// https://github.com/coreos/fleet/issues/1118
+
+	// modify the json so that the state is "launched" rather than
+	// "active"
+	fleetUnitJsonModified := strings.Replace(
+		fleetUnitJson,
+		"inactive",
+		"launched",
+		-1,
+	)
+
+	log.Printf("Launch fleet unit %v (%v)", unitName, unitNumber)
 
 	endpointUrl := fmt.Sprintf("%v/units/%v@%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
 
-	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(fleetUnitJson)))
+	return PUT(endpointUrl, fleetUnitJsonModified)
+
+}
+
+func PUT(endpointUrl, json string) error {
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("PUT", endpointUrl, bytes.NewReader([]byte(json)))
 	if err != nil {
 		return err
 	}

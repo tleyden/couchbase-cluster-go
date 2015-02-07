@@ -138,7 +138,7 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
 
 	fleetUnitJsonTemplate := `
 {
-    "desiredState":"launched",
+    "desiredState":"inactive",
     "options":[
         {
             "section":"Service",
