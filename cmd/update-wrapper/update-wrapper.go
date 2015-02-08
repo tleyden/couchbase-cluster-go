@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -56,14 +57,27 @@ func checkUpdateRequired() bool {
 
 func findEtcdServersFromArgs(args []string) []string {
 
-	// TODO
-	/*
-		for _, arg := range args {
+	for i, arg := range args {
+		if strings.Contains(arg, "--etcd-servers") {
+			if strings.Contains(arg, "=") {
+				// tokenize on = ..
+				tokens := strings.Split(arg, "=")
+				commaSepList := tokens[1] // srv1,srv2..
+				return strings.Split(commaSepList, ",")
+			} else {
+				// assume the next arg is list of etcd servers
+				if len(args) >= i+1 {
+					nextArg := args[i+1]
+					// split on "," and return array
+					return strings.Split(nextArg, ",")
+				}
 
-
+			}
 
 		}
-	*/
+
+	}
+
 	return []string{}
 
 }
