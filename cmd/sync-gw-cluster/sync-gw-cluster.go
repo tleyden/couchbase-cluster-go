@@ -23,8 +23,8 @@ Options:
   --create-bucket=<bucket-name> create a bucket on couchbase server with the given name 
   --create-bucket-size=<bucket-size-mb> if creating a bucket, use this size in MB
   --create-bucket-replicas=<replica-count> if creating a bucket, use this replica count (defaults to 1)
-  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhos
-  --docker-tag=<dt>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
+  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
+  --docker-tag=<docker-tag>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
 
 `
 

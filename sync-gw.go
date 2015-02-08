@@ -87,7 +87,7 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 
 	createBucketReplicaCount, _ := ExtractIntArg(arguments, "--create-bucket-replicas")
 	s.CreateBucketReplicaCount = createBucketReplicaCount
-	if s.CreateBucketReplicaCount == 0 {
+	if s.CreateBucketReplicaCount <= 0 {
 		s.CreateBucketReplicaCount = 1
 	}
 

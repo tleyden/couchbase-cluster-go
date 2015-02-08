@@ -192,8 +192,6 @@ func (c CouchbaseCluster) FindLiveNode() (string, error) {
 
 	node := response.Node
 
-	log.Printf("node: %+v", node)
-
 	if node == nil {
 		log.Printf("node is nil, returning")
 		return "", nil
@@ -203,8 +201,6 @@ func (c CouchbaseCluster) FindLiveNode() (string, error) {
 		log.Printf("len(node.Nodes) == 0, returning")
 		return "", nil
 	}
-
-	log.Printf("node.Nodes: %+v", node.Nodes)
 
 	for _, subNode := range node.Nodes {
 
@@ -1015,16 +1011,17 @@ func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
 func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
 	worker := func() (finished bool, err error) {
+		log.Printf("WaitUntilClusterRunning()")
 		liveNodeIp, err := c.FindLiveNode()
 		if err != nil || liveNodeIp == "" {
-			log.Printf("FindLiveNode returned err: %v or empty ip", err)
+			log.Printf("Could not find live node, will retry.  err: %v", err)
 			return false, nil
 		}
-		log.Printf("Connecting to liveNodeIp: %v", liveNodeIp)
+		log.Printf("Found liveNodeIp: %v", liveNodeIp)
 
 		ok, err := c.CheckAllNodesClusterHealthy(liveNodeIp)
 		if err != nil || !ok {
-			log.Printf("CheckAllNodesClusterHealthy checked failed.  ok: %v err: %v", ok, err)
+			log.Printf("All nodes not healthy yet, will retry.  err: %v", err)
 			return false, nil
 		}
 		return true, nil
@@ -1033,6 +1030,7 @@ func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
 	sleeper := func(numAttempts int) (bool, int) {
 		if numAttempts > maxAttempts {
+			log.Printf("WaitUntilClusterRunning giving up after %v attempts", numAttempts)
 			return false, -1
 		}
 		sleepSeconds := 10 * numAttempts
