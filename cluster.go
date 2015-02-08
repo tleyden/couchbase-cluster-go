@@ -564,7 +564,7 @@ func (c CouchbaseCluster) JoinLiveNode(liveNodeIp string) error {
 		}
 	}
 
-	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp); err != nil {
+	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
 		return err
 	}
 
@@ -812,39 +812,27 @@ func (c CouchbaseCluster) AddNode(liveNodeIp string) error {
 
 }
 
-func (c CouchbaseCluster) WaitUntilNoRebalanceRunning(liveNodeIp string) error {
+func (c CouchbaseCluster) WaitUntilNoRebalanceRunning(liveNodeIp string, sleepSeconds int) error {
 
-	log.Printf("WaitUntilNoRebalanceRunning()")
+	maxAttempts := 500
 
-	numSecondsToSleep := 5
-
-	for i := 0; i < 1000; i++ {
-
+	worker := func() (finished bool, err error) {
 		isRebalancing, err := c.IsRebalancing(liveNodeIp)
 		if err != nil {
-			return err
+			return false, err
 		}
-
-		switch isRebalancing {
-		case true:
-
-			time2wait := time.Second * time.Duration(numSecondsToSleep)
-
-			log.Printf("Rebalance in progress, waiting %v seconds", time2wait)
-
-			<-time.After(time2wait)
-
-			continue
-		case false:
-
-			log.Printf("No rebalance in progress")
-
-			return nil
-		}
+		return !isRebalancing, nil
 
 	}
 
-	return fmt.Errorf("Unable to rebalance after several attempts")
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		return true, sleepSeconds
+	}
+
+	return RetryLoop(worker, sleeper)
 
 }
 
@@ -955,7 +943,6 @@ func (c CouchbaseCluster) EventLoop() {
 			log.Printf(msg)
 			lastErr = err
 		} else {
-			log.Printf("Published node state to etcd")
 			// if we had an error earlier, but it's now resolved,
 			// lets log that fact
 			if lastErr != nil {
@@ -981,8 +968,6 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 	// TODO: maybe this should be ip:port
 	key := path.Join(KEY_NODE_STATE, c.LocalCouchbaseIp)
 
-	log.Printf("Publish node-state to key: %v", key)
-
 	_, err := c.etcdClient.Set(key, "up", ttlSeconds)
 
 	return err
@@ -995,7 +980,7 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 type RetrySleeper func(retryCount int) (bool, int)
 
 // A RetryWorker encapsulates the work being done in a Retry Loop
-type RetryWorker func() (bool, error)
+type RetryWorker func() (finished bool, err error)
 
 func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
 
@@ -1028,7 +1013,7 @@ func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
 // If all nodes are healthy, then return.  Otherwise retry loop.
 func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
-	worker := func() (bool, error) {
+	worker := func() (finished bool, err error) {
 		liveNodeIp, err := c.FindLiveNode()
 		if err != nil || liveNodeIp == "" {
 			log.Printf("FindLiveNode returned err: %v or empty ip", err)
@@ -1059,7 +1044,7 @@ func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
 func (c CouchbaseCluster) WaitUntilNumNodesRunning(numNodes, maxAttempts int) error {
 
-	worker := func() (bool, error) {
+	worker := func() (finished bool, err error) {
 		liveNodeIp, err := c.FindLiveNode()
 		if err != nil || liveNodeIp == "" {
 			log.Printf("FindLiveNode returned err: %v or empty ip", err)

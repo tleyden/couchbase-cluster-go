@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-etcd/etcd"
 )
@@ -98,6 +99,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	// wait until no rebalance running
 	cb := NewCouchbaseCluster(c.EtcdServers)
+
 	if err := cb.LoadAdminCredsFromEtcd(); err != nil {
 		return err
 	}
@@ -105,9 +107,23 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	if err != nil {
 		return err
 	}
-	if err := cb.WaitUntilNoRebalanceRunning(liveNodeIp); err != nil {
-		return err
+
+	// dirty hack to solve problem: the cluster might have
+	// 2 nodes which just finished rebalancing, and a third node
+	// that joins and triggers another rebalance.  thus, it will briefly
+	// go into "no rebalances happening" state, followed by a rebalance.
+	// if we see the "no rebalances happening state", we'll be tricked and
+	// think we're done when we're really not.
+	// workaround: check twice, and sleep in between the check
+	for i := 0; i < c.NumNodes; i++ {
+		if err := cb.WaitUntilNoRebalanceRunning(liveNodeIp, 30); err != nil {
+			return err
+		}
+		log.Println("No rebalance running, sleeping 30s before double checking")
+		<-time.After(time.Second * 30)
+
 	}
+	log.Println("No rebalance running after several checks")
 
 	// let user know its up
 
