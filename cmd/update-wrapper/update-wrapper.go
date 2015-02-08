@@ -33,17 +33,17 @@ func main() {
 
 }
 
-func checkUpdateRequired() {
+func checkUpdateRequired() bool {
 
 	// find etcd server list from args
 	etcdServers := findEtcdServersFromArgs(os.Args)
 
 	// create etcd client
-	etcdClient = etcd.NewClient(etcdServers)
+	etcdClient := etcd.NewClient(etcdServers)
 	etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 
 	// get value of /couchbase.com/enable-code-refresh
-	_, err := c.etcdClient.Get(KEY_ENABLE_CODE_REFRESH, false, false)
+	_, err := etcdClient.Get(KEY_ENABLE_CODE_REFRESH, false, false)
 	if err != nil {
 		// if we got an error, assume key not there
 		return false
@@ -88,7 +88,7 @@ func updateAndRebuild() {
 	cmdGodepInstall := exec.Command("godep", "go", "install")
 	cmdGodepInstall.Dir = fmt.Sprintf(
 		"%v/src/github.com/tleyden/couchbase-cluster-go",
-		os.Environ["GOPATH"],
+		os.Getenv("GOPATH"),
 	)
 
 	cmdGodepInstall.Stdout = os.Stdout
