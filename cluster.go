@@ -49,6 +49,7 @@ type CouchbaseCluster struct {
 func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
 
 	c := &CouchbaseCluster{}
+	StupidPortHack(c)
 
 	if len(etcdServers) > 0 {
 		c.EtcdServers = etcdServers
@@ -1132,8 +1133,6 @@ func WaitUntilCBClusterRunning(etcdServers []string) {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
 	}
 
-	StupidPortHack(couchbaseCluster)
-
 	numRetries := 10000
 	if err := couchbaseCluster.WaitUntilClusterRunning(numRetries); err != nil {
 		log.Fatalf("Failed to wait until cluster running: %v", err)
@@ -1148,8 +1147,6 @@ func WaitUntilNumNodesRunning(numNodes int, etcdServers []string) {
 	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
 	}
-
-	StupidPortHack(couchbaseCluster)
 
 	numRetries := 10000
 	if err := couchbaseCluster.WaitUntilNumNodesRunning(numNodes, numRetries); err != nil {

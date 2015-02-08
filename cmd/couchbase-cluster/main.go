@@ -50,8 +50,6 @@ func startCouchbaseNode(etcdServers []string, localIp string) {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
 	}
 
-	cbcluster.StupidPortHack(couchbaseCluster)
-
 	if err := couchbaseCluster.StartCouchbaseNode(); err != nil {
 		log.Fatal(err)
 	}
