@@ -96,6 +96,19 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	log.Printf("Waiting for cluster to be up ..")
 	WaitUntilNumNodesRunning(c.NumNodes, c.EtcdServers)
 
+	// wait until no rebalance running
+	cb := NewCouchbaseCluster(c.EtcdServers)
+	if err := cb.LoadAdminCredsFromEtcd(); err != nil {
+		return err
+	}
+	liveNodeIp, err := cb.FindLiveNode()
+	if err != nil {
+		return err
+	}
+	if err := cb.WaitUntilNoRebalanceRunning(liveNodeIp); err != nil {
+		return err
+	}
+
 	// let user know its up
 
 	log.Printf("Cluster is up!")

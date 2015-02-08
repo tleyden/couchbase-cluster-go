@@ -815,11 +815,9 @@ func (c CouchbaseCluster) WaitUntilNoRebalanceRunning(liveNodeIp string) error {
 
 	log.Printf("WaitUntilNoRebalanceRunning()")
 
-	numSecondsToSleep := 0
+	numSecondsToSleep := 5
 
-	for i := 0; i < MAX_RETRIES_JOIN_CLUSTER; i++ {
-
-		numSecondsToSleep += 100
+	for i := 0; i < 1000; i++ {
 
 		isRebalancing, err := c.IsRebalancing(liveNodeIp)
 		if err != nil {

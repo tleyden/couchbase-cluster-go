@@ -113,6 +113,8 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 		return err
 	}
 
+	log.Printf("Your sync gateway cluster has been launched successfully!")
+
 	return nil
 }
 
