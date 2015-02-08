@@ -1011,7 +1011,7 @@ func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
 func (c CouchbaseCluster) WaitUntilClusterRunning(maxAttempts int) error {
 
 	worker := func() (finished bool, err error) {
-		log.Printf("WaitUntilClusterRunning()")
+		log.Printf("WaitUntilClusterRunning")
 		liveNodeIp, err := c.FindLiveNode()
 		if err != nil || liveNodeIp == "" {
 			log.Printf("Could not find live node, will retry.  err: %v", err)
