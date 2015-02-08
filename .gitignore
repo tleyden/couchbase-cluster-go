@@ -12,3 +12,4 @@ build
 cli/config.json
 cmd/couchbase-cluster/couchbase-cluster
 cmd/couchbase-fleet/couchbase-fleet
+cmd/update-wrapper/update-wrapper
