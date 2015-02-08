@@ -119,7 +119,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		if err := cb.WaitUntilNoRebalanceRunning(liveNodeIp, 30); err != nil {
 			return err
 		}
-		log.Println("No rebalance running, sleeping 30s before double checking")
+		log.Println("No rebalance running, sleeping 30s. (%v/%v)", i, c.NumNodes)
 		<-time.After(time.Second * 30)
 
 	}

@@ -817,6 +817,7 @@ func (c CouchbaseCluster) WaitUntilNoRebalanceRunning(liveNodeIp string, sleepSe
 	maxAttempts := 500
 
 	worker := func() (finished bool, err error) {
+		log.Printf("WaitUntilNoRebalanceRunning()")
 		isRebalancing, err := c.IsRebalancing(liveNodeIp)
 		if err != nil {
 			return false, err
