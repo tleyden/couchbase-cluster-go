@@ -23,6 +23,7 @@ func main() {
 	requiresUpdate := checkUpdateRequired()
 
 	if requiresUpdate {
+		log.Printf("Going to try to update to latest code")
 		updateAndRebuild()
 	}
 
@@ -85,7 +86,12 @@ func updateAndRebuild() {
 		return
 	}
 
-	cmdGodepInstall := exec.Command("godep", "go", "install")
+	cmdGodepInstall := exec.Command(
+		"godep",
+		"go",
+		"install",
+		"github.com/tleyden/couchbase-cluster-go/...",
+	)
 	cmdGodepInstall.Dir = fmt.Sprintf(
 		"%v/src/github.com/tleyden/couchbase-cluster-go",
 		os.Getenv("GOPATH"),
