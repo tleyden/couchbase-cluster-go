@@ -176,7 +176,7 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c 'SYNC_GW_COMMIT=$(etcdctl get /couchbase.com/sync-gateway/commit);  SYNC_GW_CONFIG=$(etcdctl get /couchbase.com/sync-gateway/config); /usr/bin/docker run --name sync_gw --net=host tleyden5iwx/sync-gateway-coreos sync-gw-start -c $SYNC_GW_COMMIT -g $SYNC_GW_CONFIG'"
+            "value":"/bin/bash -c 'SYNC_GW_COMMIT=$(etcdctl get /couchbase.com/sync-gateway/commit);  SYNC_GW_CONFIG=$(etcdctl get /couchbase.com/sync-gateway/config); /usr/bin/docker run --name sync_gw --net=host tleyden5iwx/sync-gateway-coreos update-wrapper sync-gw-start -c $SYNC_GW_COMMIT -g $SYNC_GW_CONFIG'"
         },
         {
             "section":"Service",

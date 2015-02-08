@@ -257,7 +257,7 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
