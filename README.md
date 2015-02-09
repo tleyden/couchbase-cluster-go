@@ -7,6 +7,10 @@ This is a Go library that helps initialize and manage a Couchbase Server cluster
 * Couchbase Server
 * Etcd present on all nodes (this ships by default with CoreOS)
 
+## Issue Tracker
+
+Please file issues to the [couchbase-server-docker](https://github.com/couchbaselabs/couchbase-server-docker) repo.  
+
 ## References
 
 * [Running a Sync Gateway Cluster Under CoreOS on AWS](http://tleyden.github.io/blog/2014/12/15/running-a-sync-gateway-cluster-under-coreos-on-aws/)
