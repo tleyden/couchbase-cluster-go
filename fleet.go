@@ -200,7 +200,7 @@ func (c CouchbaseFleet) verifyCleanSlate() error {
 
 	// if that key exists, there is residue and we should abort
 	if err == nil {
-		return fmt.Errorf("Found residue -- key: %v in etcd.  Destroy cluster first", KEY_NODE_STATE)
+		return fmt.Errorf("Found residue -- key: %v in etcd.  You should destroy the cluster first, then try again.", KEY_NODE_STATE)
 	}
 
 	// if we get an error with "key not found", then we are starting
