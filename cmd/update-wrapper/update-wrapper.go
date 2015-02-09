@@ -102,25 +102,6 @@ func updateAndRebuild() {
 		return
 	}
 
-	cmdGodepInstall := exec.Command(
-		"godep",
-		"go",
-		"install",
-		"github.com/tleyden/couchbase-cluster-go/...",
-	)
-	cmdGodepInstall.Dir = fmt.Sprintf(
-		"%v/src/github.com/tleyden/couchbase-cluster-go",
-		os.Getenv("GOPATH"),
-	)
-
-	cmdGodepInstall.Stdout = os.Stdout
-	cmdGodepInstall.Stderr = os.Stderr
-
-	if err := cmdGodepInstall.Run(); err != nil {
-		log.Printf("Error trying to godep install: %v.  Ignoring it", err)
-		return
-	}
-
 }
 
 func invokeTarget() error {
