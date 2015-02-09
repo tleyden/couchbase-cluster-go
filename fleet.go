@@ -115,12 +115,12 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	// if we see the "no rebalances happening state", we'll be tricked and
 	// think we're done when we're really not.
 	// workaround: check twice, and sleep in between the check
-	for i := 0; i <= c.NumNodes; i++ {
+	for i := 0; i < c.NumNodes; i++ {
 		if err := cb.WaitUntilNoRebalanceRunning(liveNodeIp, 30); err != nil {
 			return err
 		}
-		log.Printf("No rebalance running, sleeping 30s. (%v/%v)", i, c.NumNodes)
-		<-time.After(time.Second * 30)
+		log.Printf("No rebalance running, sleeping 15s. (%v/%v)", i+1, c.NumNodes)
+		<-time.After(time.Second * 15)
 
 	}
 	log.Println("No rebalance running after several checks")
