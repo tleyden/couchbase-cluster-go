@@ -3,6 +3,8 @@ This is a Go library that helps initialize and manage a Couchbase Server cluster
 
 ## Requirements
 
+[![Join the chat at https://gitter.im/tleyden/couchbase-cluster-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tleyden/couchbase-cluster-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 * Couchbase Server
 * Etcd present on all nodes (this ships by default with CoreOS)
 
