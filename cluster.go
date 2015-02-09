@@ -371,6 +371,8 @@ func CouchbaseServiceRunning() (bool, error) {
 // Docs: http://docs.couchbase.com/admin/admin/REST/rest-node-set-username.html
 func (c CouchbaseCluster) ClusterInit() error {
 
+	log.Printf("ClusterInit()")
+
 	endpointUrl := fmt.Sprintf("http://%v:%v/settings/web", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
 	data := url.Values{
@@ -869,6 +871,8 @@ func (c CouchbaseCluster) getJsonData(endpointUrl string, into interface{}) erro
 
 func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data url.Values) error {
 
+	log.Printf("POST to %v", endpointUrl)
+
 	client := &http.Client{}
 
 	req, err := http.NewRequest("POST", endpointUrl, strings.NewReader(data.Encode()))
@@ -877,8 +881,10 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	if defaultAdminCreds {
+		log.Printf("Using default admin username/password")
 		req.SetBasicAuth(COUCHBASE_DEFAULT_ADMIN_USERNAME, COUCHBASE_DEFAULT_ADMIN_PASSWORD)
 	} else {
+		log.Printf("Using username/password pulled from etcd")
 		req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
 	}
 
