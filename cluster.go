@@ -35,15 +35,19 @@ const (
 )
 
 type CouchbaseCluster struct {
+	AdminCredentials
 	etcdClient                 *etcd.Client
 	LocalCouchbaseIp           string
 	LocalCouchbasePort         string
 	LocalCouchbaseVersion      string
-	AdminUsername              string
-	AdminPassword              string
 	defaultBucketRamQuotaMB    string
 	defaultBucketReplicaNumber string
 	EtcdServers                []string
+}
+
+type AdminCredentials struct {
+	AdminUsername string
+	AdminPassword string
 }
 
 func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
@@ -867,7 +871,7 @@ func (c CouchbaseCluster) getJsonData(endpointUrl string, into interface{}) erro
 
 }
 
-func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data url.Values) error {
+func (c CouchbaseCluster) POSTWithCreds(creds AdminCredentials, endpointUrl string, data url.Values) error {
 
 	client := &http.Client{}
 
@@ -876,11 +880,8 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	if defaultAdminCreds {
-		req.SetBasicAuth(COUCHBASE_DEFAULT_ADMIN_USERNAME, COUCHBASE_DEFAULT_ADMIN_PASSWORD)
-	} else {
-		req.SetBasicAuth(c.AdminUsername, c.AdminPassword)
-	}
+
+	req.SetBasicAuth(creds.AdminUsername, creds.AdminPassword)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -903,6 +904,45 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 			resp.StatusCode,
 			body,
 		)
+	}
+
+	return nil
+
+}
+
+func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data url.Values) error {
+	defaultCreds := AdminCredentials{
+		AdminUsername: COUCHBASE_DEFAULT_ADMIN_USERNAME,
+		AdminPassword: COUCHBASE_DEFAULT_ADMIN_PASSWORD,
+	}
+
+	etcdCreds := AdminCredentials{
+		AdminUsername: c.AdminUsername,
+		AdminPassword: c.AdminPassword,
+	}
+
+	// if defaultAdminCreds, try first with admin creds,
+	// then try again with etcd creds
+	if defaultAdminCreds {
+
+		log.Printf("Using default username/password")
+		if err := c.POSTWithCreds(defaultCreds, endpointUrl, data); err != nil {
+			log.Printf("Error: %v.  Retry with etcd username/password", err)
+			if err := c.POSTWithCreds(etcdCreds, endpointUrl, data); err != nil {
+				return err
+			}
+		}
+
+	} else {
+		// otherwise, do the reverse order .  First try etcd creds, then default.
+		log.Printf("Using username/password pulled from etcd")
+		if err := c.POSTWithCreds(etcdCreds, endpointUrl, data); err != nil {
+			log.Printf("Error: %v.  Retry with default username/password", err)
+			if err := c.POSTWithCreds(defaultCreds, endpointUrl, data); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil
