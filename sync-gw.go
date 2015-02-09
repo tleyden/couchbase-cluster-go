@@ -98,6 +98,8 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 
 func (s SyncGwCluster) LaunchSyncGateway() error {
 
+	log.Printf("Launching sync gw")
+
 	// create bucket (if user asked for this)
 	if err := s.createBucketIfNeeded(); err != nil {
 		return err
@@ -191,6 +193,8 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
     ]
 }
 `
+
+	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
 
 	tmpl, err := template.New("sgw_fleet").Parse(fleetUnitJsonTemplate)
 	if err != nil {

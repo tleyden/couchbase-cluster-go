@@ -273,6 +273,8 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 }
 `
 
+	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
+
 	tmpl, err := template.New("couchbase_fleet").Parse(fleetUnitJsonTemplate)
 	if err != nil {
 		return "", err
