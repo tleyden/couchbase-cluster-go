@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"text/template"
 
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/tleyden/go-etcd/etcd"
 )
 
 const (

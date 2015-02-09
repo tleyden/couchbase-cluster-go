@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/tleyden/go-etcd/etcd"
 )
 
 // This makes it easy to run a command after possibly first grabbing the latest version
