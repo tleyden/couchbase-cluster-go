@@ -24,8 +24,10 @@ func main() {
 	requiresUpdate := checkUpdateRequired()
 
 	if requiresUpdate {
-		log.Printf("Going to try to update to latest code")
+		log.Printf("Update-Wrapper: updating to latest code")
 		updateAndRebuild()
+	} else {
+		log.Printf("Update-Wrapper: skipping update")
 	}
 
 	// invoke appropriate binary with command line args
