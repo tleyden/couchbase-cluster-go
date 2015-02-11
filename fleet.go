@@ -289,8 +289,6 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 }
 `
 
-	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
-
 	tmpl, err := template.New("couchbase_node").Parse(fleetUnitJsonTemplate)
 	if err != nil {
 		return "", err
@@ -308,6 +306,8 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	log.Printf("Couchbase node fleet unit: %v", out.String())
 
 	return out.String(), nil
 
@@ -373,8 +373,6 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
 }
 `
 
-	log.Printf("Sidekick fleet template: %v", fleetUnitJsonTemplate)
-
 	tmpl, err := template.New("couchbase_fleet").Parse(fleetUnitJsonTemplate)
 	if err != nil {
 		return "", err
@@ -393,15 +391,20 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
 		return "", err
 	}
 
+	log.Printf("Couchbase sidekick fleet unit %v: %v", unitNumber, out.String())
+
 	return out.String(), nil
 
 }
 
 func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
-	if err := submitFleetUnit(unitName, fleetUnitJson); err != nil {
-		return err
-	}
+	/* temporarily disable this, since it may be causing issues
+	           that make "systemctl cat <unit>" stop working
+		if err := submitFleetUnit(unitName, fleetUnitJson); err != nil {
+			return err
+		}
+	*/
 
 	if err := launchFleetUnitN(unitName, unitNumber, fleetUnitJson); err != nil {
 		return err
