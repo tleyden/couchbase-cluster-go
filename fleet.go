@@ -34,6 +34,10 @@ type FleetParams struct {
 	CB_VERSION    string
 	CONTAINER_TAG string
 }
+type SidekickFleetParams struct {
+	CONTAINER_TAG string
+	UNIT_NUMBER   int
+}
 
 func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {
 
@@ -76,17 +80,29 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		return err
 	}
 
-	fleetUnitJson, err := c.generateFleetUnitJson()
+	nodeFleetUnitJson, err := c.generateNodeFleetUnitJson()
 	if err != nil {
 		return err
 	}
-
 	for i := 1; i < c.NumNodes+1; i++ {
 
 		if err := submitAndLaunchFleetUnitN(
 			i,
 			"couchbase_node",
-			fleetUnitJson,
+			nodeFleetUnitJson,
+		); err != nil {
+			return err
+		}
+
+		sidekickFleetUnitJson, err := c.generateSidekickFleetUnitJson(i)
+		if err != nil {
+			return err
+		}
+
+		if err := submitAndLaunchFleetUnitN(
+			i,
+			"couchbase_sidekick",
+			sidekickFleetUnitJson,
 		); err != nil {
 			return err
 		}
@@ -223,7 +239,7 @@ func (c CouchbaseFleet) setUserNamePassEtcd() error {
 
 }
 
-func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
+func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 
 	fleetUnitJsonTemplate := `
 {
@@ -257,7 +273,7 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-node --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-start'"
         },
         {
             "section":"Service",
@@ -275,7 +291,7 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 
 	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
 
-	tmpl, err := template.New("couchbase_fleet").Parse(fleetUnitJsonTemplate)
+	tmpl, err := template.New("couchbase_node").Parse(fleetUnitJsonTemplate)
 	if err != nil {
 		return "", err
 	}
@@ -283,6 +299,90 @@ func (c CouchbaseFleet) generateFleetUnitJson() (string, error) {
 	params := FleetParams{
 		CB_VERSION:    c.CbVersion,
 		CONTAINER_TAG: c.ContainerTag,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
+}
+
+func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, error) {
+
+	fleetUnitJsonTemplate := `
+{
+    "desiredState":"inactive",
+    "options":[
+        {
+            "section":"Unit",
+            "name":"BindsTo",
+            "value":"couchbase_node@{{ .UNIT_NUMBER }}.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"couchbase_node@{{ .UNIT_NUMBER }}.service"
+        },
+        {
+            "section":"Service",
+            "name":"TimeoutStartSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
+            "name":"EnvironmentFile",
+            "value":"/etc/environment"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker kill couchbase-sidekick"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker rm couchbase-sidekick"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStart",
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"/usr/bin/docker stop couchbase-sidekick"
+        },
+        {
+            "section":"X-Fleet",
+            "name":"MachineOf",
+            "value":"couchbase_node@{{ .UNIT_NUMBER }}.service"
+        }
+    ]
+}
+`
+
+	log.Printf("Sidekick fleet template: %v", fleetUnitJsonTemplate)
+
+	tmpl, err := template.New("couchbase_fleet").Parse(fleetUnitJsonTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	params := SidekickFleetParams{
+		CONTAINER_TAG: c.ContainerTag,
+		UNIT_NUMBER:   unitNumber,
 	}
 
 	out := &bytes.Buffer{}
