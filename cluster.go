@@ -537,44 +537,54 @@ func (c CouchbaseCluster) JoinLiveNode(liveNodeIp string) error {
 	return nil
 }
 
-func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, error) {
+func (c CouchbaseCluster) GetLocalClusterNode(liveNodeIp string) (map[string]interface{}, error) {
 
-	log.Printf("CheckIfInCluster()")
 	nodes, err := c.GetClusterNodes(liveNodeIp)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	log.Printf("CheckIfInCluster nodes: %+v", nodes)
 
 	for _, node := range nodes {
 
 		nodeMap, ok := node.(map[string]interface{})
 		if !ok {
-			return false, fmt.Errorf("Node had unexpected data type")
+			return nil, fmt.Errorf("Node had unexpected data type")
 		}
 
 		hostname := nodeMap["hostname"] // ex: "10.231.192.180:8091"
 		hostnameStr, ok := hostname.(string)
-		log.Printf("CheckIfInCluster, hostname: %v", hostnameStr)
 
 		if !ok {
-			return false, fmt.Errorf("No hostname string found")
+			return nil, fmt.Errorf("No hostname string found")
 		}
 		if strings.Contains(hostnameStr, c.LocalCouchbaseIp) {
 
-			status := nodeMap["status"]
-			statusStr, ok := status.(string)
-			if !ok {
-				return false, fmt.Errorf("No status string found")
-			}
-			if statusStr == "healthy" {
-				log.Printf("CheckIfInCluster returning true")
-				return true, nil
-			} else {
-				log.Printf("%v in cluster, but status not healthy.  Status: %v", c.LocalCouchbaseIp, statusStr)
-			}
+			return nodeMap, nil
 
 		}
+	}
+
+	return nil, fmt.Errorf("Unable to find node with hostname %v in %+v", c.LocalCouchbaseIp, nodes)
+
+}
+
+func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, error) {
+
+	nodeMap, err := c.GetLocalClusterNode(liveNodeIp)
+	if err != nil {
+		return false, err
+	}
+
+	status := nodeMap["status"]
+	statusStr, ok := status.(string)
+	if !ok {
+		return false, fmt.Errorf("No status string found")
+	}
+	if statusStr == "healthy" {
+		log.Printf("CheckIfInCluster returning true")
+		return true, nil
+	} else {
+		log.Printf("%v in cluster, but status not healthy.  Status: %v", c.LocalCouchbaseIp, statusStr)
 	}
 
 	log.Printf("CheckIfInCluster returning false")
