@@ -73,7 +73,7 @@ func (c *CouchbaseCluster) ConnectToEtcd() {
 	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 }
 
-func (c *CouchbaseCluster) StartCouchbaseNode() error {
+func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 
 	if c.LocalCouchbaseIp == "" {
 		return fmt.Errorf("You must define LocalCouchbaseIp before calling")
@@ -85,14 +85,6 @@ func (c *CouchbaseCluster) StartCouchbaseNode() error {
 
 	success, err := c.BecomeFirstClusterNode()
 	if err != nil {
-		return err
-	}
-
-	if err := PrepareVarDirectory(); err != nil {
-		return err
-	}
-
-	if err := StartCouchbaseService(); err != nil {
 		return err
 	}
 
@@ -277,96 +269,6 @@ func (c CouchbaseCluster) WaitForRestService() error {
 
 	return fmt.Errorf("Unable to connect to REST api after several attempts")
 
-}
-
-// Couchbase expects a few subdirectories under /opt/couchbase/var, or else
-// it will refuse to start and fail with an error.  This is only needed
-// when /opt/couchbase/var is mounted as a volume, which presumably starts out empty.
-func PrepareVarDirectory() error {
-
-	log.Printf("PrepareVarDirectory()")
-
-	cmd := exec.Command(
-		"mkdir",
-		"-p",
-		"lib/couchbase",
-		"lib/couchbase/config",
-		"lib/couchbase/data",
-		"lib/couchbase/stats",
-		"lib/couchbase/logs",
-		"lib/moxi",
-	)
-	cmd.Dir = "/opt/couchbase/var"
-
-	output, err := cmd.CombinedOutput()
-	log.Printf("mkdir output: %v", output)
-	if err != nil {
-		return err
-	}
-
-	cmd = exec.Command(
-		"chown",
-		"-R",
-		"couchbase:couchbase",
-		"/opt/couchbase/var",
-	)
-	output, err = cmd.CombinedOutput()
-	log.Printf("chown output: %v", output)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func StartCouchbaseService() error {
-
-	log.Printf("StartCouchbaseService()")
-
-	for i := 0; i < MAX_RETRIES_START_COUCHBASE; i++ {
-
-		// call "service couchbase-server start"
-		cmd := exec.Command("service", "couchbase-server", "start")
-
-		if err := cmd.Run(); err != nil {
-			log.Printf("Running command returned error: %v", err)
-			return err
-		}
-
-		running, err := CouchbaseServiceRunning()
-		if err != nil {
-			return err
-		}
-		if running {
-			log.Printf("Couchbase service running")
-			return nil
-		}
-
-		log.Printf("Couchbase service not running, sleep and try again")
-
-		<-time.After(time.Second * 10)
-
-	}
-
-	return fmt.Errorf("Unable to start couchbase service after several retries")
-
-}
-
-func CouchbaseServiceRunning() (bool, error) {
-
-	cmd := exec.Command("service", "couchbase-server", "status")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// service x status returns a non-zero exit code if
-		// the service is not running, which causes cmd.CombinedOutput
-		// to return an error.   however, absorb the error and turn it
-		// into a "not running" signal rather than propagating an error.
-		return false, nil
-	}
-	log.Printf("Checking status returned output: %v", string(output))
-
-	return strings.Contains(string(output), "is running"), nil
 }
 
 // Set the username and password for the cluster.  The same as calling:

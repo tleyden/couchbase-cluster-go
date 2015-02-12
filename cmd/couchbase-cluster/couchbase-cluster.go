@@ -13,7 +13,7 @@ func main() {
 
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
-  couchbase-cluster start-couchbase-node --local-ip=<ip> [--etcd-servers=<server-list>] 
+  couchbase-cluster start-couchbase-sidekick --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
 
 Options:
@@ -28,20 +28,20 @@ Options:
 		return
 	}
 
-	if cbcluster.IsCommandEnabled(arguments, "start-couchbase-node") {
+	if cbcluster.IsCommandEnabled(arguments, "start-couchbase-sidekick") {
 
 		localIp, found := arguments["--local-ip"]
 		if !found {
 			log.Fatalf("Required argument missing")
 		}
 		localIpString := localIp.(string)
-		startCouchbaseNode(etcdServers, localIpString)
+		startCouchbaseSidekick(etcdServers, localIpString)
 		return
 	}
 
 }
 
-func startCouchbaseNode(etcdServers []string, localIp string) {
+func startCouchbaseSidekick(etcdServers []string, localIp string) {
 
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
 	couchbaseCluster.LocalCouchbaseIp = localIp
@@ -50,7 +50,7 @@ func startCouchbaseNode(etcdServers []string, localIp string) {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
 	}
 
-	if err := couchbaseCluster.StartCouchbaseNode(); err != nil {
+	if err := couchbaseCluster.StartCouchbaseSidekick(); err != nil {
 		log.Fatal(err)
 	}
 
