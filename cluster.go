@@ -26,8 +26,8 @@ const (
 
 	// in order to set the username and password of a cluster
 	// you must pass these "factory default values"
-	COUCHBASE_DEFAULT_ADMIN_USERNAME = "admin"
-	COUCHBASE_DEFAULT_ADMIN_PASSWORD = "password"
+	DEFAULT_ADMIN_USERNAME = "admin"
+	DEFAULT_ADMIN_PASSWORD = "password"
 
 	LOCAL_COUCHBASE_PORT          = "8091"
 	DEFAULT_BUCKET_RAM_MB         = "128"
@@ -271,13 +271,68 @@ func (c CouchbaseCluster) WaitForRestService() error {
 
 }
 
+// Figure out if the cluster has already been initialized (a paassword has been set)
+// going to /settings/web endpoint and seeing if the factory default username/password
+// work.  If it works, that means that cluster has not been initialized yet.
+func (c CouchbaseCluster) IsClusterPasswordSet() (bool, error) {
+
+	log.Printf("IsClusterPasswordSet()")
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/settings/web", c.LocalCouchbaseIp, c.LocalCouchbasePort)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", endpointUrl, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.SetBasicAuth(DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+
+	// if the response status is 401, then we can assume cluster
+	// has been initialized
+	return resp.StatusCode == 401, nil
+
+}
+
+func (c CouchbaseCluster) ClusterInit() error {
+
+	log.Printf("ClusterInit()")
+
+	// have we already done initialization?
+	isPasswordSet, err := c.IsClusterPasswordSet()
+	if err != nil {
+		return err
+	}
+	if isPasswordSet {
+		log.Printf("Cluster password was previously set, skipping rest of ClusterInit()")
+		return nil
+	}
+
+	if err := c.ClusterSetPassword(); err != nil {
+		return err
+	}
+
+	if err := c.SetClusterRam(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // Set the username and password for the cluster.  The same as calling:
 // $ couchbase-cli cluster-init ..
 //
 // Docs: http://docs.couchbase.com/admin/admin/REST/rest-node-set-username.html
-func (c CouchbaseCluster) ClusterInit() error {
+func (c CouchbaseCluster) ClusterSetPassword() error {
 
-	log.Printf("ClusterInit()")
+	log.Printf("ClusterSetPassword()")
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/settings/web", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
@@ -291,7 +346,7 @@ func (c CouchbaseCluster) ClusterInit() error {
 		return err
 	}
 
-	return c.SetClusterRam()
+	return nil
 
 }
 
@@ -818,8 +873,8 @@ func (c CouchbaseCluster) POSTWithCreds(creds AdminCredentials, endpointUrl stri
 
 func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data url.Values) error {
 	defaultCreds := AdminCredentials{
-		AdminUsername: COUCHBASE_DEFAULT_ADMIN_USERNAME,
-		AdminPassword: COUCHBASE_DEFAULT_ADMIN_PASSWORD,
+		AdminUsername: DEFAULT_ADMIN_USERNAME,
+		AdminPassword: DEFAULT_ADMIN_PASSWORD,
 	}
 
 	etcdCreds := AdminCredentials{
@@ -944,6 +999,7 @@ func RetryLoop(worker RetryWorker, sleeper RetrySleeper) error {
 			return fmt.Errorf("RetryLoop giving up after %v attempts", numAttempts)
 		}
 
+		log.Printf("Sleeping %v seconds", sleepSeconds)
 		<-time.After(time.Second * time.Duration(sleepSeconds))
 
 		numAttempts += 1
@@ -1044,8 +1100,15 @@ func (c *CouchbaseCluster) LoadAdminCredsFromEtcd() error {
 		}
 
 		userpassComponents := strings.Split(userpassRaw, ":")
-		c.AdminUsername = userpassComponents[0]
-		c.AdminPassword = userpassComponents[1]
+		username := userpassComponents[0]
+		password := userpassComponents[1]
+
+		if username == DEFAULT_ADMIN_USERNAME && password == DEFAULT_ADMIN_PASSWORD {
+			return fmt.Errorf("Using %v/%v is not allowed", username, password)
+		}
+
+		c.AdminUsername = username
+		c.AdminPassword = password
 
 		return nil
 
