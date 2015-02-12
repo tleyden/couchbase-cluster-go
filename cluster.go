@@ -512,15 +512,15 @@ func (c CouchbaseCluster) JoinLiveNode(liveNodeIp string) error {
 
 	log.Printf("JoinLiveNode() called with %v", liveNodeIp)
 
-	inCluster, err := c.CheckIfInClusterAndHealthy(liveNodeIp)
+	err := c.WaitUntilInClusterAndHealthy(liveNodeIp)
 	if err != nil {
-		return err
-	}
-
-	if !inCluster {
+		log.Printf("WaitUntilInClusterAndHealthy() returned error: %v.  Call AddNodeRetry()", err)
 		if err := c.AddNodeRetry(liveNodeIp); err != nil {
 			return err
 		}
+
+	} else {
+		log.Printf("WaitUntilInClusterAndHealthy() done.  Node is in cluster and healthy")
 	}
 
 	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
@@ -568,27 +568,45 @@ func (c CouchbaseCluster) GetLocalClusterNode(liveNodeIp string) (map[string]int
 
 }
 
-func (c CouchbaseCluster) CheckIfInClusterAndHealthy(liveNodeIp string) (bool, error) {
+func (c CouchbaseCluster) WaitUntilInClusterAndHealthy(liveNodeIp string) error {
 
-	nodeMap, err := c.GetLocalClusterNode(liveNodeIp)
-	if err != nil {
-		return false, err
+	maxAttempts := 3
+	sleepSeconds := 10
+
+	worker := func() (finished bool, err error) {
+
+		nodeMap, err := c.GetLocalClusterNode(liveNodeIp)
+		if err != nil {
+			log.Printf("No cluster node found for %v.  Not retrying", c.LocalCouchbaseIp)
+			return true, err
+		}
+
+		status := nodeMap["status"]
+		statusStr, ok := status.(string)
+		if !ok {
+			return false, fmt.Errorf("No status string found")
+		}
+		switch statusStr {
+		case "healthy":
+			return true, nil
+		case "warmup":
+			log.Printf("Node is warming up, wait a while and retry")
+			return false, nil
+		default:
+			return false, fmt.Errorf("Unexpected status: %v", statusStr)
+		}
+
 	}
 
-	status := nodeMap["status"]
-	statusStr, ok := status.(string)
-	if !ok {
-		return false, fmt.Errorf("No status string found")
-	}
-	if statusStr == "healthy" {
-		log.Printf("CheckIfInCluster returning true")
-		return true, nil
-	} else {
-		log.Printf("%v in cluster, but status not healthy.  Status: %v", c.LocalCouchbaseIp, statusStr)
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		return true, sleepSeconds
 	}
 
-	log.Printf("CheckIfInCluster returning false")
-	return false, nil
+	return RetryLoop(worker, sleeper)
+
 }
 
 // Check if at least numNodes nodes in the cluster are healthy.  Connect to liveNodeIp.
