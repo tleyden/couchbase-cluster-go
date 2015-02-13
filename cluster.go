@@ -570,7 +570,7 @@ func (c CouchbaseCluster) GetLocalClusterNode(liveNodeIp string) (map[string]int
 
 func (c CouchbaseCluster) WaitUntilInClusterAndHealthy(liveNodeIp string) error {
 
-	maxAttempts := 3
+	maxAttempts := 25
 	sleepSeconds := 10
 
 	worker := func() (finished bool, err error) {
