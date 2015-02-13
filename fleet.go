@@ -357,7 +357,7 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PUBLIC_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
