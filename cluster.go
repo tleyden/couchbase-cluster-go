@@ -116,6 +116,8 @@ func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 
 func (c *CouchbaseCluster) Failover() error {
 
+	log.Printf("Failover() called")
+
 	localOtpNode, err := c.LocalOtpNode()
 	if err != nil {
 		return err
@@ -130,6 +132,8 @@ func (c *CouchbaseCluster) Failover() error {
 	if err := c.POST(true, endpointUrl, data); err != nil {
 		return err
 	}
+
+	log.Printf("Failover() finished")
 
 	return nil
 

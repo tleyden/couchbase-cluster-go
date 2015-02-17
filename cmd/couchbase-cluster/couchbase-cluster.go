@@ -40,7 +40,7 @@ Options:
 		return
 	}
 
-	if cbcluster.IsCommandEnabled(arguments, "failover-rebalance") {
+	if cbcluster.IsCommandEnabled(arguments, "failover") {
 
 		localIp, found := arguments["--local-ip"]
 		if !found {
@@ -50,6 +50,8 @@ Options:
 		failover(etcdServers, localIpString)
 		return
 	}
+
+	log.Fatalf("Nothing to do!")
 
 }
 
