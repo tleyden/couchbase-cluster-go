@@ -129,7 +129,7 @@ func (c *CouchbaseCluster) Failover() error {
 		"otpNode": {localOtpNode},
 	}
 
-	if err := c.POST(true, endpointUrl, data); err != nil {
+	if err := c.POST(false, endpointUrl, data); err != nil {
 		return err
 	}
 
