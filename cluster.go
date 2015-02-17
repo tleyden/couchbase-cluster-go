@@ -114,6 +114,49 @@ func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 
 }
 
+func (c *CouchbaseCluster) Failover() error {
+
+	localOtpNode, err := c.LocalOtpNode()
+	if err != nil {
+		return err
+	}
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/controller/failOver", c.LocalCouchbaseIp, c.LocalCouchbasePort)
+
+	data := url.Values{
+		"otpNode": {localOtpNode},
+	}
+
+	if err := c.POST(true, endpointUrl, data); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c CouchbaseCluster) LocalOtpNode() (otpNode string, err error) {
+
+	liveNodeIp, err := c.FindLiveNode()
+	if err != nil {
+		return "", err
+	}
+
+	otpNodeList, err := c.OtpNodeList(liveNodeIp)
+	if err != nil {
+		return "", err
+	}
+
+	for _, otpNode := range otpNodeList {
+		if strings.Contains(otpNode, c.LocalCouchbaseIp) {
+			return otpNode, nil
+		}
+	}
+
+	return "", fmt.Errorf("No otpnode found with ip %v in %v", c.LocalCouchbaseIp, otpNodeList)
+
+}
+
 func (c CouchbaseCluster) BecomeFirstClusterNode() (bool, error) {
 
 	log.Printf("BecomeFirstClusterNode()")
@@ -522,6 +565,17 @@ func (c CouchbaseCluster) JoinLiveNode(liveNodeIp string) error {
 	} else {
 		log.Printf("WaitUntilInClusterAndHealthy() done.  Node is in cluster and healthy")
 	}
+
+	// at this point, it might need a recovery
+	/*
+		needsRecovery, err := c.CheckNeedsRecovery(liveNodeIp)
+		if err != nil {
+			return err
+		}
+		if needsRecovery {
+
+		}
+	*/
 
 	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
 		return err
