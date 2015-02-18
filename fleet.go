@@ -252,6 +252,11 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         },
         {
             "section":"Service",
+            "name":"TimeoutStopSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
             "name":"EnvironmentFile",
             "value":"/etc/environment"
         },
@@ -274,6 +279,11 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
             "section":"Service",
             "name":"ExecStart",
             "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-start'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"xecStop=/bin/bash -c '/usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
