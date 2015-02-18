@@ -705,6 +705,38 @@ func (c CouchbaseCluster) TriggerRebalance(liveNodeIp string) error {
 	return c.POST(false, endpointUrl, data)
 }
 
+// Based on docs: http://docs.couchbase.com/couchbase-manual-2.5/cb-rest-api/#rebalancing-nodes
+func (c CouchbaseCluster) TriggerRebalanceRemoveLocal(liveNodeIp string) error {
+
+	log.Printf("TriggerRebalanceRemoveLocal()")
+	defer log.Printf("/TriggerRebalanceRemoveLocal()")
+
+	otpNodeList, err := c.OtpNodeList(liveNodeIp)
+	if err != nil {
+		return err
+	}
+
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/controller/rebalance", liveNodeIp, liveNodePort)
+
+	otpNodes := strings.Join(otpNodeList, ",")
+
+	localOtpNode, err := c.LocalOtpNode()
+	if err != nil {
+		return err
+	}
+
+	data := url.Values{
+		"ejectedNodes": {localOtpNode},
+		"knownNodes":   {otpNodes},
+	}
+
+	log.Printf("TriggerRebalanceRemoveLocal encoded form value: %v", data.Encode())
+
+	return c.POST(false, endpointUrl, data)
+}
+
 // The rebalance command needs the current list of nodes, and it wants
 // the "otpNode" values, ie: ["ns_1@10.231.192.180", ..]
 func (c CouchbaseCluster) OtpNodeList(liveNodeIp string) ([]string, error) {
@@ -1176,10 +1208,6 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 	log.Printf("RemoveAndRebalance()")
 	defer log.Printf("/RemoveAndRebalance()")
 
-	if err := c.RemoveLocalNode(); err != nil {
-		return err
-	}
-
 	liveNodeIp, err := c.FindLiveNode()
 	if err != nil {
 		return err
@@ -1188,46 +1216,11 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 		return fmt.Errorf("Could not find live node")
 	}
 
-	if err := c.TriggerRebalance(liveNodeIp); err != nil {
+	if err := c.TriggerRebalanceRemoveLocal(liveNodeIp); err != nil {
 		return err
 	}
 
 	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-// http://docs.couchbase.com/admin/admin/REST/rest-cluster-removenode.html
-func (c CouchbaseCluster) RemoveLocalNode() error {
-
-	log.Printf("RemoveLocalNode()")
-	defer log.Printf("/RemoveLocalNode()")
-
-	localOtpNode, err := c.LocalOtpNode()
-	if err != nil {
-		return err
-	}
-
-	liveNodeIp, err := c.FindLiveNode()
-	if err != nil {
-		return err
-	}
-	if liveNodeIp == "" {
-		return fmt.Errorf("Could not find live node")
-	}
-
-	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
-
-	endpointUrl := fmt.Sprintf("http://%v:%v/controller/ejectNode", liveNodeIp, liveNodePort)
-
-	data := url.Values{
-		"otpNode": {localOtpNode},
-	}
-
-	if err := c.POST(false, endpointUrl, data); err != nil {
 		return err
 	}
 
