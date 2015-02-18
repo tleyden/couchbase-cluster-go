@@ -12,6 +12,26 @@ This is a Go library that helps initialize and manage a Couchbase Server cluster
 
 Please file issues to the [couchbase-server-docker](https://github.com/couchbaselabs/couchbase-server-docker) repo.  
 
+## Notes regarding node restart
+
+### Approach 1 - remove and re-add
+
+The less risky /slower way:
+
+1. remove - rebalance
+1. Reboot the OS
+1. add node back
+1. rebalance
+
+### Approach 2 - failover
+
+Risky way - fast
+
+1. Graceful failover on the node I need to restart the OS
+1. Reboot the OS
+1. Delta node recovery
+1. Rebalance
+
 ## References
 
 * [Running a Sync Gateway Cluster Under CoreOS on AWS](http://tleyden.github.io/blog/2014/12/15/running-a-sync-gateway-cluster-under-coreos-on-aws/)
