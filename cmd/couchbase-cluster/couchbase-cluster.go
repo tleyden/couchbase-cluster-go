@@ -15,6 +15,7 @@ Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
   couchbase-cluster start-couchbase-sidekick --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster failover --local-ip=<ip> [--etcd-servers=<server-list>] 
+  couchbase-cluster remove-and-rebalance --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
 
 Options:
@@ -51,11 +52,22 @@ Options:
 		return
 	}
 
+	if cbcluster.IsCommandEnabled(arguments, "remove-and-rebalance") {
+
+		localIp, found := arguments["--local-ip"]
+		if !found {
+			log.Fatalf("Required argument missing")
+		}
+		localIpString := localIp.(string)
+		removeAndRebalance(etcdServers, localIpString)
+		return
+	}
+
 	log.Fatalf("Nothing to do!")
 
 }
 
-func startCouchbaseSidekick(etcdServers []string, localIp string) {
+func initCluster(etcdServers []string, localIp string) *cbcluster.CouchbaseCluster {
 
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
 	couchbaseCluster.LocalCouchbaseIp = localIp
@@ -63,6 +75,14 @@ func startCouchbaseSidekick(etcdServers []string, localIp string) {
 	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
 		log.Fatalf("Failed to get admin credentials from etc: %v", err)
 	}
+
+	return couchbaseCluster
+
+}
+
+func startCouchbaseSidekick(etcdServers []string, localIp string) {
+
+	couchbaseCluster := initCluster(etcdServers, localIp)
 
 	if err := couchbaseCluster.StartCouchbaseSidekick(); err != nil {
 		log.Fatal(err)
@@ -72,14 +92,19 @@ func startCouchbaseSidekick(etcdServers []string, localIp string) {
 
 func failover(etcdServers []string, localIp string) {
 
-	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
-	couchbaseCluster.LocalCouchbaseIp = localIp
-
-	if err := couchbaseCluster.LoadAdminCredsFromEtcd(); err != nil {
-		log.Fatalf("Failed to get admin credentials from etc: %v", err)
-	}
+	couchbaseCluster := initCluster(etcdServers, localIp)
 
 	if err := couchbaseCluster.Failover(); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func removeAndRebalance(etcdServers []string, localIp string) {
+
+	couchbaseCluster := initCluster(etcdServers, localIp)
+
+	if err := couchbaseCluster.RemoveAndRebalance(); err != nil {
 		log.Fatal(err)
 	}
 

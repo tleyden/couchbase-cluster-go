@@ -114,31 +114,6 @@ func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 
 }
 
-func (c *CouchbaseCluster) Failover() error {
-
-	log.Printf("Failover() called")
-
-	localOtpNode, err := c.LocalOtpNode()
-	if err != nil {
-		return err
-	}
-
-	endpointUrl := fmt.Sprintf("http://%v:%v/controller/failOver", c.LocalCouchbaseIp, c.LocalCouchbasePort)
-
-	data := url.Values{
-		"otpNode": {localOtpNode},
-	}
-
-	if err := c.POST(false, endpointUrl, data); err != nil {
-		return err
-	}
-
-	log.Printf("Failover() finished")
-
-	return nil
-
-}
-
 func (c CouchbaseCluster) LocalOtpNode() (otpNode string, err error) {
 
 	liveNodeIp, err := c.FindLiveNode()
@@ -569,17 +544,6 @@ func (c CouchbaseCluster) JoinLiveNode(liveNodeIp string) error {
 	} else {
 		log.Printf("WaitUntilInClusterAndHealthy() done.  Node is in cluster and healthy")
 	}
-
-	// at this point, it might need a recovery
-	/*
-		needsRecovery, err := c.CheckNeedsRecovery(liveNodeIp)
-		if err != nil {
-			return err
-		}
-		if needsRecovery {
-
-		}
-	*/
 
 	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
 		return err
@@ -1201,6 +1165,97 @@ func (c *CouchbaseCluster) LoadAdminCredsFromEtcd() error {
 	}
 
 	return fmt.Errorf("Unable to load admin creds after several retries")
+
+}
+
+// Remove the local node from the cluser
+// Trigger a rebalance
+// Wait until the rebalance has finished
+func (c CouchbaseCluster) RemoveAndRebalance() error {
+
+	log.Printf("RemoveAndRebalance()")
+	defer log.Printf("/RemoveAndRebalance()")
+
+	if err := c.RemoveLocalNode(); err != nil {
+		return err
+	}
+
+	liveNodeIp, err := c.FindLiveNode()
+	if err != nil {
+		return err
+	}
+	if liveNodeIp == "" {
+		return fmt.Errorf("Could not find live node")
+	}
+
+	if err := c.TriggerRebalance(liveNodeIp); err != nil {
+		return err
+	}
+
+	if err := c.WaitUntilNoRebalanceRunning(liveNodeIp, 5); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// http://docs.couchbase.com/admin/admin/REST/rest-cluster-removenode.html
+func (c CouchbaseCluster) RemoveLocalNode() error {
+
+	log.Printf("RemoveLocalNode()")
+	defer log.Printf("/RemoveLocalNode()")
+
+	localOtpNode, err := c.LocalOtpNode()
+	if err != nil {
+		return err
+	}
+
+	liveNodeIp, err := c.FindLiveNode()
+	if err != nil {
+		return err
+	}
+	if liveNodeIp == "" {
+		return fmt.Errorf("Could not find live node")
+	}
+
+	liveNodePort := c.LocalCouchbasePort // TODO: we should be getting this from etcd
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/controller/ejectNode", liveNodeIp, liveNodePort)
+
+	data := url.Values{
+		"otpNode": {localOtpNode},
+	}
+
+	if err := c.POST(false, endpointUrl, data); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (c CouchbaseCluster) Failover() error {
+
+	log.Printf("Failover()")
+	defer log.Printf("/Failover()")
+
+	localOtpNode, err := c.LocalOtpNode()
+	if err != nil {
+		return err
+	}
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/controller/failOver", c.LocalCouchbaseIp, c.LocalCouchbasePort)
+
+	data := url.Values{
+		"otpNode": {localOtpNode},
+	}
+
+	if err := c.POST(false, endpointUrl, data); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
