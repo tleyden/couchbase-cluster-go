@@ -14,7 +14,6 @@ func main() {
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
   couchbase-cluster start-couchbase-sidekick --local-ip=<ip> [--etcd-servers=<server-list>] 
-  couchbase-cluster failover --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster remove-and-rebalance --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
 
@@ -38,17 +37,6 @@ Options:
 		}
 		localIpString := localIp.(string)
 		startCouchbaseSidekick(etcdServers, localIpString)
-		return
-	}
-
-	if cbcluster.IsCommandEnabled(arguments, "failover") {
-
-		localIp, found := arguments["--local-ip"]
-		if !found {
-			log.Fatalf("Required argument missing")
-		}
-		localIpString := localIp.(string)
-		failover(etcdServers, localIpString)
 		return
 	}
 
@@ -85,16 +73,6 @@ func startCouchbaseSidekick(etcdServers []string, localIp string) {
 	couchbaseCluster := initCluster(etcdServers, localIp)
 
 	if err := couchbaseCluster.StartCouchbaseSidekick(); err != nil {
-		log.Fatal(err)
-	}
-
-}
-
-func failover(etcdServers []string, localIp string) {
-
-	couchbaseCluster := initCluster(etcdServers, localIp)
-
-	if err := couchbaseCluster.Failover(); err != nil {
 		log.Fatal(err)
 	}
 

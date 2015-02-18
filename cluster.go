@@ -1228,30 +1228,6 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 
 }
 
-func (c CouchbaseCluster) Failover() error {
-
-	log.Printf("Failover()")
-	defer log.Printf("/Failover()")
-
-	localOtpNode, err := c.LocalOtpNode()
-	if err != nil {
-		return err
-	}
-
-	endpointUrl := fmt.Sprintf("http://%v:%v/controller/failOver", c.LocalCouchbaseIp, c.LocalCouchbasePort)
-
-	data := url.Values{
-		"otpNode": {localOtpNode},
-	}
-
-	if err := c.POST(false, endpointUrl, data); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
 func WaitUntilCBClusterRunning(etcdServers []string) {
 
 	couchbaseCluster := NewCouchbaseCluster(etcdServers)
