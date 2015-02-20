@@ -246,6 +246,21 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
     "desiredState":"inactive",
     "options":[
         {
+            "section":"Unit",
+            "name":"Description",
+            "value":"couchbase_node"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"docker.service"
+        },
+        {
             "section":"Service",
             "name":"TimeoutStartSec",
             "value":"0"
@@ -329,6 +344,21 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
 {
     "desiredState":"inactive",
     "options":[
+        {
+            "section":"Unit",
+            "name":"Description",
+            "value":"couchbase_sidekick"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"docker.service"
+        },
         {
             "section":"Unit",
             "name":"BindsTo",
