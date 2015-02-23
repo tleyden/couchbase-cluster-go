@@ -268,7 +268,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"TimeoutStopSec",
-            "value":"0"
+            "value":"600"
         },
         {
             "section":"Service",
@@ -298,12 +298,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStop",
-            "value":"/bin/bash -c 'echo stopping via remove-and-rebalance;  /usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4'"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStop",
-            "value":"/usr/bin/docker stop couchbase"
+            "value":"/bin/bash -c 'echo stopping via remove-and-rebalance | tee /home/core/out.txt;  /usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4 | tee /home/core/out2.txt;  echo stopping docker container | tee /home/core/out3.txt;  /usr/bin/docker stop couchbase'"
         },
         {
             "section":"X-Fleet",
