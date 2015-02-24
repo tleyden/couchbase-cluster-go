@@ -302,13 +302,18 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         },
         {
             "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}"
+        },
+        {
+            "section":"Service",
             "name":"ExecStart",
             "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-start'"
         },
         {
             "section":"Service",
             "name":"ExecStop",
-            "value":"/bin/bash -c 'curl localhost:4001/version 2>&1 | tee /home/core/curl-etcd.txt;  echo stopping via remove-and-rebalance | tee /home/core/echo-out.txt; /usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4 2>&1 | tee /home/core/out2.txt;  echo stopping docker container | tee /home/core/echo-out2.txt; sudo docker ps 2>&1 | tee /home/core/docker-beforestop.txt;  sudo docker stop couchbase; sudo docker ps 2>&1 | tee /home/core/docker-afterstop.txt; echo ExecStop done!'"
+            "value":"/bin/bash -c '/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; curl localhost:4001/version 2>&1 | tee /home/core/curl-etcd.txt;  echo stopping docker container | tee /home/core/echo-out2.txt; sudo docker ps 2>&1 | tee /home/core/docker-beforestop.txt;  sudo docker stop couchbase; sudo docker ps 2>&1 | tee /home/core/docker-afterstop.txt; echo ExecStop done!'"
         },
         {
             "section":"X-Fleet",
@@ -366,6 +371,26 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
         },
         {
             "section":"Unit",
+            "name":"After",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"fleet.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"fleet.service"
+        },
+        {
+            "section":"Unit",
             "name":"BindsTo",
             "value":"couchbase_node@{{ .UNIT_NUMBER }}.service"
         },
@@ -402,7 +427,7 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",
