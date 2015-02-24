@@ -1237,7 +1237,7 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 
 func (c CouchbaseCluster) CheckRemoveRebalanceDisabled() bool {
 
-	_, err := etcdClient.Get(KEY_REMOVE_REBALANCE_DISABLED, false, false)
+	_, err := c.etcdClient.Get(KEY_REMOVE_REBALANCE_DISABLED, false, false)
 	if err != nil {
 		// if we got an error, assume key not there
 		return false
