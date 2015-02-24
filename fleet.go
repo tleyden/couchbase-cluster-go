@@ -313,7 +313,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStop",
-            "value":"/bin/bash -c '/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; curl localhost:4001/version 2>&1 | tee /home/core/curl-etcd.txt;  echo stopping docker container | tee /home/core/echo-out2.txt; sudo docker ps 2>&1 | tee /home/core/docker-beforestop.txt;  sudo docker stop couchbase; sudo docker ps 2>&1 | tee /home/core/docker-afterstop.txt; echo ExecStop done!'"
+            "value":"/bin/bash -c '/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase'"
         },
         {
             "section":"X-Fleet",
