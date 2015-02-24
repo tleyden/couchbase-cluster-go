@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	KEY_NODE_STATE              = "/couchbase.com/couchbase-node-state"
-	KEY_USER_PASS               = "/couchbase.com/userpass"
-	TTL_NONE                    = 0
-	MAX_RETRIES_JOIN_CLUSTER    = 10
-	MAX_RETRIES_START_COUCHBASE = 10
+	KEY_NODE_STATE                = "/couchbase.com/couchbase-node-state"
+	KEY_USER_PASS                 = "/couchbase.com/userpass"
+	KEY_REMOVE_REBALANCE_DISABLED = "/couchbase.com/remove-rebalance-disabled"
+	TTL_NONE                      = 0
+	MAX_RETRIES_JOIN_CLUSTER      = 10
+	MAX_RETRIES_START_COUCHBASE   = 10
 
 	// in order to set the username and password of a cluster
 	// you must pass these "factory default values"
@@ -1208,6 +1209,12 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 	log.Printf("RemoveAndRebalance()")
 	defer log.Printf("/RemoveAndRebalance()")
 
+	disabled := c.CheckRemoveRebalanceDisabled()
+	if disabled {
+		log.Printf("RemoveAndRebalance() is disabled, skipping.")
+		return nil
+	}
+
 	liveNodeIp, err := c.FindLiveNode()
 	if err != nil {
 		return err
@@ -1225,6 +1232,18 @@ func (c CouchbaseCluster) RemoveAndRebalance() error {
 	}
 
 	return nil
+
+}
+
+func (c CouchbaseCluster) CheckRemoveRebalanceDisabled() bool {
+
+	_, err := etcdClient.Get(KEY_REMOVE_REBALANCE_DISABLED, false, false)
+	if err != nil {
+		// if we got an error, assume key not there
+		return false
+	}
+
+	return true
 
 }
 
