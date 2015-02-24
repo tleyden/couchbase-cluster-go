@@ -261,6 +261,16 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
             "value":"docker.service"
         },
         {
+            "section":"Unit",
+            "name":"After",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"etcd.service"
+        },
+        {
             "section":"Service",
             "name":"TimeoutStartSec",
             "value":"0"
@@ -298,7 +308,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"ExecStop",
-            "value":"/bin/bash -c 'echo stopping via remove-and-rebalance | tee /home/core/out.txt; /usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4 2>&1 | tee /home/core/out2.txt;  echo stopping docker container | tee /home/core/out3.txt;  /usr/bin/docker stop couchbase'"
+            "value":"/bin/bash -c 'curl localhost:4001/version 2>&1 | tee /home/core/curl-etcd.txt;  echo stopping via remove-and-rebalance | tee /home/core/echo-out.txt; /usr/bin/wget https://drone.io/github.com/tleyden/couchbase-cluster-go/files/cmd/couchbase-cluster/couchbase-cluster; /usr/bin/chmod +x couchbase-cluster; ./couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4 2>&1 | tee /home/core/out2.txt;  echo stopping docker container | tee /home/core/echo-out2.txt; sudo docker ps 2>&1 | tee /home/core/docker-beforestop.txt;  sudo docker stop couchbase; sudo docker ps 2>&1 | tee /home/core/docker-afterstop.txt; echo ExecStop done!'"
         },
         {
             "section":"X-Fleet",
