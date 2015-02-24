@@ -278,7 +278,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
         {
             "section":"Service",
             "name":"TimeoutStopSec",
-            "value":"600"
+            "value":"0"
         },
         {
             "section":"Service",
