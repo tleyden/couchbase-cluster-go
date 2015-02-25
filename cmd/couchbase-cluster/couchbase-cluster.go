@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/docopt/docopt-go"
@@ -15,6 +16,7 @@ Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
   couchbase-cluster start-couchbase-sidekick --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster remove-and-rebalance --local-ip=<ip> [--etcd-servers=<server-list>] 
+  couchbase-cluster get-live-node-ip [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
 
 Options:
@@ -48,6 +50,17 @@ Options:
 		}
 		localIpString := localIp.(string)
 		removeAndRebalance(etcdServers, localIpString)
+		return
+	}
+
+	if cbcluster.IsCommandEnabled(arguments, "get-live-node-ip") {
+
+		liveNodeIp, err := getLiveNodeIp(etcdServers)
+		if err != nil {
+			log.Fatalf("Failed to get admin credentials from etc: %v", err)
+
+		}
+		fmt.Printf("%v\n", liveNodeIp)
 		return
 	}
 
@@ -85,5 +98,12 @@ func removeAndRebalance(etcdServers []string, localIp string) {
 	if err := couchbaseCluster.RemoveAndRebalance(); err != nil {
 		log.Fatal(err)
 	}
+
+}
+
+func getLiveNodeIp(etcdServers []string) (liveNodeIp string, err error) {
+
+	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+	return couchbaseCluster.FindLiveNode()
 
 }
