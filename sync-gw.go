@@ -131,8 +131,7 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 		return err
 	}
 
-	// wait for s.NumNodes to appear in etcd /couchbase.com/sgw-node-state
-	// and able to be reached on port 4984
+	// wait for all sync gw nodes to be running
 	if err := s.waitForAllSyncGwNodesRunning(); err != nil {
 		return err
 	}
@@ -142,6 +141,8 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 	return nil
 }
 
+// wait for s.NumNodes to appear in etcd /couchbase.com/sgw-node-state
+// and able to be reached on port 4984
 func (s SyncGwCluster) waitForAllSyncGwNodesRunning() error {
 
 	maxAttempts := 50
