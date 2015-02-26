@@ -115,6 +115,18 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 		return err
 	}
 
+	// kick off fleet sidekicks
+	if err := s.kickOffFleetSidekickUnits(); err != nil {
+		return err
+	}
+
+	// wait for s.NumNodes to appear in etcd /couchbase.com/sgw-node-state
+
+	// ^^^ TODO: need sidekicks for this
+
+	// wait until all nodes in etcd /couchbase.com/sgw-node-state
+	// can be reached on port 4984 with 200 OK response
+
 	log.Printf("Your sync gateway cluster has been launched successfully!")
 
 	return nil
@@ -144,6 +156,41 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
 {
     "desiredState":"inactive",
     "options":[
+        {
+            "section":"Unit",
+            "name":"Description",
+            "value":"sync_gw_node"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"fleet.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"fleet.service"
+        },
         {
             "section":"Service",
             "name":"TimeoutStartSec",
@@ -203,6 +250,133 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
 
 	params := FleetParams{
 		CONTAINER_TAG: s.ContainerTag,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
+}
+
+func (s SyncGwCluster) kickOffFleetSidekickUnits() error {
+
+	for i := 1; i < s.NumNodes+1; i++ {
+
+		fleetUnitJson, err := s.generateFleetSidekickUnitJson(i)
+		if err != nil {
+			return err
+		}
+
+		if err := submitAndLaunchFleetUnitN(i, "sync_gw_sidekick", fleetUnitJson); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (s SyncGwCluster) generateFleetSidekickUnitJson(unitNumber int) (string, error) {
+
+	fleetUnitJsonTemplate := `
+{
+    "desiredState":"inactive",
+    "options":[
+       {
+            "section":"Unit",
+            "name":"Description",
+            "value":"sync_gw_sidekick"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"docker.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"Requires",
+            "value":"etcd.service"
+        },
+        {
+            "section":"Unit",
+            "name":"BindsTo",
+            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
+        },
+        {
+            "section":"Unit",
+            "name":"After",
+            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
+        },
+        {
+            "section":"Service",
+            "name":"TimeoutStartSec",
+            "value":"0"
+        },
+        {
+            "section":"Service",
+            "name":"EnvironmentFile",
+            "value":"/etc/environment"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker kill sync-gw-sidekick"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"-/usr/bin/docker rm sync-gw-sidekick"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStartPre",
+            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStart",
+            "value":"/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-cluster start-sync-gw-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
+        },
+        {
+            "section":"Service",
+            "name":"ExecStop",
+            "value":"/usr/bin/docker stop sync-gw-sidekick"
+        },
+        {
+            "section":"X-Fleet",
+            "name":"MachineOf",
+            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
+        }
+    ]
+}
+`
+
+	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
+
+	tmpl, err := template.New("sgw_fleet_sidekick").Parse(fleetUnitJsonTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	params := SidekickFleetParams{
+		CONTAINER_TAG: s.ContainerTag,
+		UNIT_NUMBER:   unitNumber,
 	}
 
 	out := &bytes.Buffer{}
