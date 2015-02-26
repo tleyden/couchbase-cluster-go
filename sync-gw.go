@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -131,15 +132,111 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 	}
 
 	// wait for s.NumNodes to appear in etcd /couchbase.com/sgw-node-state
-
-	// ^^^ TODO: need sidekicks for this
-
-	// wait until all nodes in etcd /couchbase.com/sgw-node-state
-	// can be reached on port 4984 with 200 OK response
+	// and able to be reached on port 4984
+	if err := s.waitForAllSyncGwNodesRunning(); err != nil {
+		return err
+	}
 
 	log.Printf("Your sync gateway cluster has been launched successfully!")
 
 	return nil
+}
+
+func (s SyncGwCluster) waitForAllSyncGwNodesRunning() error {
+
+	maxAttempts := 50
+
+	worker := func() (finished bool, err error) {
+
+		ipAddresses, err := s.syncGwIpAddresses()
+		if err != nil {
+			log.Printf("syncGwIpAddresses returned err: %v", err)
+			return false, nil
+		}
+
+		if len(ipAddresses) < s.NumNodes {
+			log.Printf("%v sync gateways running, expected %v", len(ipAddresses), s.NumNodes)
+			return false, nil
+		}
+
+		err = s.checkSyncGwNodesRunning(ipAddresses)
+		if err != nil {
+			log.Printf("checkSyncGwNodesRunning returned err: %v", err)
+			return false, nil
+		}
+
+		return true, nil
+
+	}
+
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		sleepSeconds := numAttempts
+		return true, sleepSeconds
+	}
+
+	return RetryLoop(worker, sleeper)
+
+}
+
+func (s SyncGwCluster) checkSyncGwNodesRunning(nodeIpAddresses []string) error {
+
+	for _, syncGwIpAddress := range nodeIpAddresses {
+
+		// TODO: don't use hardcoded port.  I guess this could get pulled from
+		// the sync gateway configuration
+		endpointUrl := fmt.Sprintf("http://%v:4984/", syncGwIpAddress)
+		log.Printf("Waiting for Sync Gw at %v to be up", endpointUrl)
+		resp, err := http.Get(endpointUrl)
+		if err != nil {
+			return fmt.Errorf("Error %v connecting to %v", err, endpointUrl)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("Unable to connect to %v", endpointUrl)
+		}
+
+	}
+
+	return nil
+
+}
+
+func (s SyncGwCluster) syncGwIpAddresses() (nodeIpAddresses []string, err error) {
+
+	response, err := s.etcdClient.Get(KEY_SYNC_GW_NODE_STATE, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting key.  Err: %v", err)
+	}
+
+	node := response.Node
+
+	if node == nil {
+		log.Printf("node is nil, returning")
+		return nil, nil
+	}
+
+	if len(node.Nodes) == 0 {
+		log.Printf("len(node.Nodes) == 0, returning")
+		return nil, nil
+	}
+
+	nodeIpAddresses = []string{}
+
+	for _, subNode := range node.Nodes {
+
+		// the key will be: /couchbase.com/sync-gw-node-state/172.17.8.101, but we
+		// only want the last element in the path
+		_, subNodeIp := path.Split(subNode.Key)
+
+		nodeIpAddresses = append(nodeIpAddresses, subNodeIp)
+
+	}
+
+	return nodeIpAddresses, nil
+
 }
 
 func (s SyncGwCluster) LaunchSyncGatewaySidekick() error {
