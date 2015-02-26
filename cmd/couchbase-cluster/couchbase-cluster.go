@@ -21,7 +21,9 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost`
+  --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
+  --local-ip=<ip> the ip address (no port) to publish in etcd
+`
 
 	arguments, _ := docopt.Parse(usage, nil, true, "Couchbase-Cluster", false)
 	etcdServers := cbcluster.ExtractEtcdServerList(arguments)

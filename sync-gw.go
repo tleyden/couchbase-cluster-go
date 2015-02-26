@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"path"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/tleyden/go-etcd/etcd"
 )
 
 const (
-	KEY_SYNC_GW_CONFIG = "/couchbase.com/sync-gateway/config"
-	KEY_SYNC_GW_COMMIT = "/couchbase.com/sync-gateway/commit"
+	KEY_SYNC_GW_NODE_STATE = "/couchbase.com/sync-gw-node-state"
+	KEY_SYNC_GW_CONFIG     = "/couchbase.com/sync-gateway/config"
+	KEY_SYNC_GW_COMMIT     = "/couchbase.com/sync-gateway/commit"
 )
 
 type SyncGwCluster struct {
@@ -25,6 +29,7 @@ type SyncGwCluster struct {
 	CreateBucketName         string
 	CreateBucketSize         int
 	CreateBucketReplicaCount int
+	LocalIp                  string
 }
 
 func NewSyncGwCluster(etcdServers []string) *SyncGwCluster {
@@ -72,6 +77,11 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	} else {
 		// "image" means: use master branch commit when docker image built
 		s.CommitOrBranch = "image"
+	}
+
+	localIp, _ := ExtractStringArg(arguments, "--local-ip")
+	if localIp != "" {
+		s.LocalIp = localIp
 	}
 
 	createBucketName, _ := ExtractStringArg(arguments, "--create-bucket")
@@ -130,6 +140,82 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 	log.Printf("Your sync gateway cluster has been launched successfully!")
 
 	return nil
+}
+
+func (s SyncGwCluster) LaunchSyncGatewaySidekick() error {
+
+	if s.LocalIp == "" {
+		return fmt.Errorf("You must define LocalIp before calling")
+	}
+
+	// create /couchbase.com/sync-gw-node-state/ directory
+	if err := s.CreateNodeStateDirectoryKey(); err != nil {
+		return err
+	}
+
+	s.EventLoop()
+
+	return fmt.Errorf("Event loop died") // should never get here
+
+}
+
+func (s SyncGwCluster) CreateNodeStateDirectoryKey() error {
+
+	// since we don't knoow how long it will be until we go
+	// into the event loop, set TTL to 0 (infinite) for now.
+	_, err := s.etcdClient.CreateDir(KEY_SYNC_GW_NODE_STATE, TTL_NONE)
+
+	if err != nil {
+		// expected error where someone beat us out
+		if strings.Contains(err.Error(), "Key already exists") {
+			return nil
+		}
+
+		// otherwise, unexpected error
+		log.Printf("Unexpected error creating %v: %v", KEY_SYNC_GW_NODE_STATE, err)
+		return err
+	}
+
+	return nil
+
+}
+
+func (s SyncGwCluster) EventLoop() {
+
+	for {
+		// update the node-state directory ttl.  we want this directory
+		// to disappear in case all nodes in the cluster are down, since
+		// otherwise it would just be unwanted residue.
+		ttlSeconds := uint64(10)
+		_, err := s.etcdClient.UpdateDir(KEY_SYNC_GW_NODE_STATE, ttlSeconds)
+		if err != nil {
+			msg := fmt.Sprintf("Error updating %v dir in etc with new TTL. "+
+				"Ignoring error, but this could cause problems",
+				KEY_SYNC_GW_NODE_STATE)
+			log.Printf(msg)
+		}
+
+		if err := s.PublishNodeStateEtcd(ttlSeconds); err != nil {
+			msg := fmt.Sprintf("Error publishing node state to etcd: %v. "+
+				"Check if etcd is running.",
+				err)
+			log.Printf(msg)
+		}
+
+		// sleep for a while
+		<-time.After(time.Second * time.Duration(ttlSeconds/2))
+
+	}
+
+}
+
+func (s SyncGwCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
+
+	key := path.Join(KEY_SYNC_GW_NODE_STATE, s.LocalIp)
+
+	_, err := s.etcdClient.Set(key, "up", ttlSeconds)
+
+	return err
 }
 
 func (s SyncGwCluster) kickOffFleetUnits() error {
@@ -351,7 +437,7 @@ func (s SyncGwCluster) generateFleetSidekickUnitJson(unitNumber int) (string, er
         {
             "section":"Service",
             "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-cluster start-sync-gw-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
+            "value":"/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-cluster launch-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
         },
         {
             "section":"Service",

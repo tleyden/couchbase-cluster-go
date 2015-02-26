@@ -13,6 +13,7 @@ func main() {
 
 Usage:
   sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--sync-gw-commit=<branch-or-commit>] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] [--create-bucket-replicas=<replica-count>] [--etcd-servers=<server-list>] [--docker-tag=<dt>]
+  sync-gw-cluster launch-sidekick --local-ip=<ip> [--etcd-servers=<server-list>]
   sync-gw-cluster -h | --help
 
 Options:
@@ -25,7 +26,7 @@ Options:
   --create-bucket-replicas=<replica-count> if creating a bucket, use this replica count (defaults to 1)
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
   --docker-tag=<docker-tag>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
-
+  --local-ip=<ip> the ip address (no port) to publish in etcd
 `
 
 	arguments, err := docopt.Parse(usage, nil, true, "Sync-Gw-Cluster", false)
@@ -33,6 +34,13 @@ Options:
 
 	if cbcluster.IsCommandEnabled(arguments, "launch-sgw") {
 		if err := launchSyncGateway(arguments); err != nil {
+			log.Fatalf("Failed: %v", err)
+		}
+		return
+	}
+
+	if cbcluster.IsCommandEnabled(arguments, "launch-sidekick") {
+		if err := launchSyncGatewaySidekick(arguments); err != nil {
 			log.Fatalf("Failed: %v", err)
 		}
 		return
@@ -52,5 +60,18 @@ func launchSyncGateway(arguments map[string]interface{}) error {
 	}
 
 	return syncGwCluster.LaunchSyncGateway()
+
+}
+
+func launchSyncGatewaySidekick(arguments map[string]interface{}) error {
+
+	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
+
+	syncGwCluster := cbcluster.NewSyncGwCluster(etcdServers)
+	if err := syncGwCluster.ExtractDocOptArgs(arguments); err != nil {
+		return err
+	}
+
+	return syncGwCluster.LaunchSyncGatewaySidekick()
 
 }
