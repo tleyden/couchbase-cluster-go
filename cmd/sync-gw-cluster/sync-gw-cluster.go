@@ -68,8 +68,10 @@ func launchSyncGatewaySidekick(arguments map[string]interface{}) error {
 	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
 
 	syncGwCluster := cbcluster.NewSyncGwCluster(etcdServers)
-	if err := syncGwCluster.ExtractDocOptArgs(arguments); err != nil {
-		return err
+
+	localIp, _ := ExtractStringArg(arguments, "--local-ip")
+	if localIp != "" {
+		syncGwCluster.LocalIp = localIp
 	}
 
 	return syncGwCluster.LaunchSyncGatewaySidekick()

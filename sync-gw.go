@@ -80,11 +80,6 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 		s.CommitOrBranch = "image"
 	}
 
-	localIp, _ := ExtractStringArg(arguments, "--local-ip")
-	if localIp != "" {
-		s.LocalIp = localIp
-	}
-
 	createBucketName, _ := ExtractStringArg(arguments, "--create-bucket")
 	if createBucketName != "" {
 		s.CreateBucketName = createBucketName
