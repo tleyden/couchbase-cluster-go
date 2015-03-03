@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 
 	"github.com/docopt/docopt-go"
@@ -25,7 +26,7 @@ Options:
 	log.Printf("args: %v.  err: %v", arguments, err)
 
 	if cbcluster.IsCommandEnabled(arguments, "rewrite") {
-		if err := retwriteConfig(arguments); err != nil {
+		if err := rewriteConfig(arguments); err != nil {
 			log.Fatalf("Failed: %v", err)
 		}
 		return
@@ -38,6 +39,10 @@ Options:
 func rewriteConfig(arguments map[string]interface{}) error {
 
 	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
+	dest, err := cbcluster.ExtractStringArg(arguments, "--dest")
+	if err != nil {
+		return err
+	}
 
 	syncGwCluster := cbcluster.NewSyncGwCluster(etcdServers)
 
@@ -58,15 +63,10 @@ func rewriteConfig(arguments map[string]interface{}) error {
 	}
 
 	// write the new config to the dest file
+	if err := ioutil.WriteFile(dest, updatedConfig, 0644); err != nil {
+		return err
+	}
 
-	/*
-		syncGwCluster := cbcluster.NewSyncGwCluster(etcdServers)
-		if err := syncGwCluster.ExtractDocOptArgs(arguments); err != nil {
-			return err
-		}
-
-		return syncGwCluster.LaunchSyncGateway()
-
-	*/
+	return nil
 
 }

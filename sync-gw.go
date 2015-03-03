@@ -103,11 +103,11 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	return nil
 }
 
-func (s SyncGwCluster) UpdateConfig(liveNodeIp, configTemplate string) (config string, err error) {
+func (s SyncGwCluster) UpdateConfig(liveNodeIp, configTemplate string) (config []byte, err error) {
 
 	tmpl, err := template.New("sgw_config").Parse(configTemplate)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	params := struct {
@@ -121,10 +121,10 @@ func (s SyncGwCluster) UpdateConfig(liveNodeIp, configTemplate string) (config s
 	// execute template and write to dest
 	err = tmpl.Execute(out, params)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return out.String(), nil
+	return out.Bytes(), nil
 
 }
 
