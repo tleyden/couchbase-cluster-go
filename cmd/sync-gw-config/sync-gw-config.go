@@ -39,7 +39,7 @@ Options:
 func rewriteConfig(arguments map[string]interface{}) error {
 
 	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
-	dest, err := cbcluster.ExtractStringArg(arguments, "--dest")
+	dest, err := cbcluster.ExtractStringArg(arguments, "--destination")
 	if err != nil {
 		return err
 	}
