@@ -3,6 +3,7 @@ package cbcluster
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -102,6 +103,60 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	return nil
 }
 
+func (s SyncGwCluster) UpdateConfig(liveNodeIp, configTemplate string) (config string, err error) {
+
+	tmpl, err := template.New("sgw_config").Parse(configTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	params := struct {
+		COUCHBASE_SERVER_IP string
+	}{
+		COUCHBASE_SERVER_IP: liveNodeIp,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
+}
+
+func (s SyncGwCluster) FetchSyncGwConfig() (config string, err error) {
+	log.Printf("FetchSyncGwConfig()")
+	configUrl, err := s.FetchSyncGwConfigUrl()
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.Get(configUrl)
+	if err != nil {
+		return "", fmt.Errorf("Error %v getting sync gw config from %v", err, configUrl)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Invalid status %v getting sync gw config from %v", resp.StatusCode, configUrl)
+	}
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func (s SyncGwCluster) FetchSyncGwConfigUrl() (configUrl string, err error) {
+	response, err := s.etcdClient.Get(KEY_SYNC_GW_CONFIG, false, false)
+	if err != nil {
+		return "", err
+	}
+	return response.Node.Value, nil
+}
+
 func (s SyncGwCluster) LaunchSyncGateway() error {
 
 	log.Printf("Launching sync gw")
@@ -169,7 +224,7 @@ func (s SyncGwCluster) waitForAllSyncGwNodesRunning() error {
 		if numAttempts > maxAttempts {
 			return false, -1
 		}
-		sleepSeconds := numAttempts
+		sleepSeconds := numAttempts * 2
 		return true, sleepSeconds
 	}
 
