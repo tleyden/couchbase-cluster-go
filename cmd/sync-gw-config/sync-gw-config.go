@@ -52,6 +52,9 @@ func rewriteConfig(arguments map[string]interface{}) error {
 	// get a couchbase live node
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
 	liveNodeIp, err := couchbaseCluster.FindLiveNode()
+
+	log.Printf("LiveNodeIp: %v", liveNodeIp)
+
 	if err != nil {
 		return err
 	}
@@ -61,6 +64,8 @@ func rewriteConfig(arguments map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Rewritten sync gw config: %v", string(updatedConfig))
 
 	// write the new config to the dest file
 	if err := ioutil.WriteFile(dest, updatedConfig, 0644); err != nil {
