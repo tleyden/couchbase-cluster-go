@@ -113,6 +113,17 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 	}
 
+	if err := c.WaitForFleetLaunch(); err != nil {
+		log.Printf("Error waiting for couchbase cluster launch: %v", err)
+		return err
+	}
+
+	return nil
+
+}
+
+func (c CouchbaseFleet) WaitForFleetLaunch() error {
+
 	// wait until X nodes are up in cluster
 	log.Printf("Waiting for cluster to be up ..")
 	WaitUntilNumNodesRunning(c.NumNodes, c.EtcdServers)

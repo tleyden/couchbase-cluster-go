@@ -13,6 +13,7 @@ func main() {
 
 Usage:
   couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] [--skip-clean-slate-check]
+  couchbase-fleet generate-units --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] --output-dir=<output_dir>
   couchbase-fleet -h | --help
 
 Options:
@@ -23,6 +24,7 @@ Options:
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
   --docker-tag=<dt>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
   --skip-clean-slate-check  if present, will skip the check that we are starting from clean state
+  --output-dir=<output_dir>
 
 `
 
