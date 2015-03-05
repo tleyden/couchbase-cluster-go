@@ -18,6 +18,8 @@ import (
 
 const (
 	FLEET_API_ENDPOINT = "http://localhost:49153/fleet/v1"
+	UNIT_NAME_NODE     = "couchbase_node"
+	UNIT_NAME_SIDEKICK = "couchbase_sidekick"
 )
 
 type CouchbaseFleet struct {
@@ -90,7 +92,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 		if err := submitAndLaunchFleetUnitN(
 			i,
-			"couchbase_node",
+			UNIT_NAME_NODE,
 			nodeFleetUnitJson,
 		); err != nil {
 			return err
@@ -103,7 +105,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 		if err := submitAndLaunchFleetUnitN(
 			i,
-			"couchbase_sidekick",
+			UNIT_NAME_SIDEKICK,
 			sidekickFleetUnitJson,
 		); err != nil {
 			return err
@@ -247,6 +249,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson2() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Printf("Couchbase node fleet unit: %v", unitFile)
 
 	// deserialize to units
 	// Deserialize(f io.Reader) (opts []*UnitOption, err error) {
@@ -270,7 +273,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson2() (string, error) {
 
 func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 
-	template := `
+	content := `
 [Unit]
 Description=couchbase_node
 After=docker.service
@@ -284,7 +287,7 @@ TimeoutStopSec=0
 EnvironmentFile=/etc/environment
 ExecStartPre=-/usr/bin/docker kill couchbase
 ExecStartPre=-/usr/bin/docker rm couchbase
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1:latest
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }}
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:latest
 ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'
 ExecStop=/bin/bash -c "/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:latest update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase"
@@ -293,8 +296,25 @@ ExecStop=/bin/bash -c "/usr/bin/docker run --net=host tleyden5iwx/couchbase-clus
 Conflicts=couchbase_node*.service
 `
 	// run through go template engine
+	tmpl, err := template.New("NodeUnitFile").Parse(content)
+	if err != nil {
+		return "", err
+	}
 
-	return template, nil
+	params := FleetParams{
+		CB_VERSION:    c.CbVersion,
+		CONTAINER_TAG: c.ContainerTag,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
 
 }
 
@@ -383,7 +403,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 }
 `
 
-	tmpl, err := template.New("couchbase_node").Parse(fleetUnitJsonTemplate)
+	tmpl, err := template.New(UNIT_NAME_NODE).Parse(fleetUnitJsonTemplate)
 	if err != nil {
 		return "", err
 	}
