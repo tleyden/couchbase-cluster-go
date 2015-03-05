@@ -125,6 +125,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 func (c CouchbaseFleet) GenerateUnits(outputDir string) error {
 
+	// generate node unit
 	nodeFleetUnit, err := c.generateNodeFleetUnitFile()
 	if err != nil {
 		return err
@@ -133,7 +134,24 @@ func (c CouchbaseFleet) GenerateUnits(outputDir string) error {
 	filename := fmt.Sprintf("%v@.service", UNIT_NAME_NODE)
 	path := filepath.Join(outputDir, filename)
 
-	return ioutil.WriteFile(path, []byte(nodeFleetUnit), 0644)
+	if err := ioutil.WriteFile(path, []byte(nodeFleetUnit), 0644); err != nil {
+		return err
+	}
+
+	// generate sidekick unit
+	sidekickFleetUnit, err := c.generateSidekickFleetUnitFile()
+	if err != nil {
+		return err
+	}
+
+	filename = fmt.Sprintf("%v@.service", UNIT_NAME_SIDEKICK)
+	path = filepath.Join(outputDir, filename)
+
+	if err := ioutil.WriteFile(path, []byte(sidekickFleetUnit), 0644); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
@@ -314,15 +332,64 @@ EnvironmentFile=/etc/environment
 ExecStartPre=-/usr/bin/docker kill couchbase
 ExecStartPre=-/usr/bin/docker rm couchbase
 ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }}
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:latest
-ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'
-ExecStop=/bin/bash -c "/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:latest update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase"
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
+ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-start'
+ExecStop=/bin/bash -c '/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase'
 
 [X-Fleet]
 Conflicts=couchbase_node*.service
 `
 	// run through go template engine
 	tmpl, err := template.New("NodeUnitFile").Parse(content)
+	if err != nil {
+		return "", err
+	}
+
+	params := FleetParams{
+		CB_VERSION:    c.CbVersion,
+		CONTAINER_TAG: c.ContainerTag,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
+}
+
+func (c CouchbaseFleet) generateSidekickFleetUnitFile() (string, error) {
+
+	content := `
+[Unit]
+Description=couchbase_sidekick
+After=docker.service
+Requires=docker.service
+After=etcd.service
+Requires=etcd.service
+After=fleet.service
+Requires=fleet.service
+BindsTo=couchbase_node@%i.service
+After=couchbase_node@%i.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill couchbase-sidekick
+ExecStartPre=-/usr/bin/docker rm couchbase-sidekick
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
+ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'
+ExecStop=/usr/bin/docker stop couchbase-sidekick
+
+[X-Fleet]
+MachineOf=couchbase_node@%i.service
+`
+	// run through go template engine
+	tmpl, err := template.New("SidekickUnitFile").Parse(content)
 	if err != nil {
 		return "", err
 	}
