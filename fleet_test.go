@@ -13,4 +13,6 @@ func TestGenerateNodeFleetUnitJson2(t *testing.T) {
 	assert.True(t, err == nil)
 	log.Printf("unitJson: %v", unitJson)
 
+	c.GenerateUnits("/tmp")
+
 }

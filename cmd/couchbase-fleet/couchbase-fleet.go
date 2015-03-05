@@ -38,6 +38,13 @@ Options:
 		return
 	}
 
+	if cbcluster.IsCommandEnabled(arguments, "generate-units") {
+		if err := generateUnits(arguments); err != nil {
+			log.Fatalf("Failed: %v", err)
+		}
+		return
+	}
+
 	log.Printf("Nothing to do!")
 
 }
@@ -52,5 +59,24 @@ func launchCouchbaseServer(arguments map[string]interface{}) error {
 	}
 
 	return couchbaseFleet.LaunchCouchbaseServer()
+
+}
+
+func generateUnits(arguments map[string]interface{}) error {
+
+	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
+
+	couchbaseFleet := cbcluster.NewCouchbaseFleet(etcdServers)
+	if err := couchbaseFleet.ExtractDocOptArgs(arguments); err != nil {
+		return err
+	}
+
+	// get the output dir from args
+	outputDir, err := cbcluster.ExtractStringArg(docOptParsed, "--output-dir")
+	if err != nil {
+		return err
+	}
+
+	return couchbaseFleet.GenerateUnits(outputDir)
 
 }

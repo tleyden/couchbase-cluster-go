@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -119,6 +120,20 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	}
 
 	return nil
+
+}
+
+func (c CouchbaseFleet) GenerateUnits(outputDir string) error {
+
+	nodeFleetUnit, err := c.generateNodeFleetUnitFile()
+	if err != nil {
+		return err
+	}
+
+	filename := fmt.Sprintf("%v@.service", UNIT_NAME_NODE)
+	path := filepath.Join(outputDir, filename)
+
+	return ioutil.WriteFile(path, []byte(nodeFleetUnit), 0644)
 
 }
 
