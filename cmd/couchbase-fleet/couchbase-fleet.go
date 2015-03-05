@@ -29,6 +29,9 @@ Options:
 `
 
 	arguments, err := docopt.Parse(usage, nil, true, "Couchbase-Fleet", false)
+	if err != nil {
+		log.Fatalf("Failed to parse args: %v", err)
+	}
 
 	if cbcluster.IsCommandEnabled(arguments, "launch-cbs") {
 		if err := launchCouchbaseServer(arguments); err != nil {
@@ -81,5 +84,7 @@ func generateUnits(arguments map[string]interface{}) error {
 	}
 
 	log.Printf("Unit files written to %v", outputDir)
+
+	return nil
 
 }
