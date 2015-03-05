@@ -72,7 +72,7 @@ func generateUnits(arguments map[string]interface{}) error {
 	}
 
 	// get the output dir from args
-	outputDir, err := cbcluster.ExtractStringArg(docOptParsed, "--output-dir")
+	outputDir, err := cbcluster.ExtractStringArg(arguments, "--output-dir")
 	if err != nil {
 		return err
 	}
