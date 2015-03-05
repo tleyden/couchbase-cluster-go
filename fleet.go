@@ -2,6 +2,7 @@ package cbcluster
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/go-systemd/unit"
 	"github.com/tleyden/go-etcd/etcd"
 )
 
@@ -236,6 +238,63 @@ func (c CouchbaseFleet) setUserNamePassEtcd() error {
 	_, err := c.etcdClient.Set(KEY_USER_PASS, c.UserPass, 0)
 
 	return err
+
+}
+
+func (c CouchbaseFleet) generateNodeFleetUnitJson2() (string, error) {
+
+	unitFile, err := c.generateNodeFleetUnitFile()
+	if err != nil {
+		return "", err
+	}
+
+	// deserialize to units
+	// Deserialize(f io.Reader) (opts []*UnitOption, err error) {
+	opts, err := unit.Deserialize(strings.NewReader(unitFile))
+	if err != nil {
+		return "", err
+	}
+
+	fleetUnit := struct {
+		Options      []*unit.UnitOption `json:"options"`
+		DesiredState string             `json:"desiredState"`
+	}{
+		Options:      opts,
+		DesiredState: "launched",
+	}
+
+	bytes, err := json.Marshal(fleetUnit)
+	return string(bytes), err
+
+}
+
+func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
+
+	template := `
+[Unit]
+Description=couchbase_node
+After=docker.service
+Requires=docker.service
+After=etcd.service
+Requires=etcd.service
+
+[Service]
+TimeoutStartSec=0
+TimeoutStopSec=0
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill couchbase
+ExecStartPre=-/usr/bin/docker rm couchbase
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-server-3.0.1:latest
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:latest
+ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'
+ExecStop=/bin/bash -c "/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:latest update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase"
+
+[X-Fleet]
+Conflicts=couchbase_node*.service
+`
+	// run through go template engine
+
+	return template, nil
 
 }
 
@@ -469,13 +528,6 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber int) (string, e
 
 func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
-	/* temporarily disable this, since it may be causing issues
-	           that make "systemctl cat <unit>" stop working
-		if err := submitFleetUnit(unitName, fleetUnitJson); err != nil {
-			return err
-		}
-	*/
-
 	if err := launchFleetUnitN(unitName, unitNumber, fleetUnitJson); err != nil {
 		return err
 	}
@@ -484,35 +536,13 @@ func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) e
 
 }
 
-func submitFleetUnit(unitName, fleetUnitJson string) error {
-
-	log.Printf("Submit fleet unit for %v", unitName)
-
-	endpointUrl := fmt.Sprintf("%v/units/%v@.service", FLEET_API_ENDPOINT, unitName)
-
-	return PUT(endpointUrl, fleetUnitJson)
-
-}
-
 func launchFleetUnitN(unitName string, unitNumber int, fleetUnitJson string) error {
-
-	// this is clunky due to:
-	// https://github.com/coreos/fleet/issues/1118
-
-	// modify the json so that the state is "launched" rather than
-	// "active"
-	fleetUnitJsonModified := strings.Replace(
-		fleetUnitJson,
-		"inactive",
-		"launched",
-		-1,
-	)
 
 	log.Printf("Launch fleet unit %v (%v)", unitName, unitNumber)
 
 	endpointUrl := fmt.Sprintf("%v/units/%v@%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
 
-	return PUT(endpointUrl, fleetUnitJsonModified)
+	return PUT(endpointUrl, fleetUnitJson)
 
 }
 
