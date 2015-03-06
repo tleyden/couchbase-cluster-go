@@ -492,7 +492,9 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
 		return "", err
 	}
 
-	params := FleetParams{
+	params := struct {
+		CONTAINER_TAG string
+	}{
 		CONTAINER_TAG: s.ContainerTag,
 	}
 
@@ -618,7 +620,10 @@ func (s SyncGwCluster) generateFleetSidekickUnitJson(unitNumber int) (string, er
 		return "", err
 	}
 
-	params := SidekickFleetParams{
+	params := struct {
+		CONTAINER_TAG string
+		UNIT_NUMBER   int
+	}{
 		CONTAINER_TAG: s.ContainerTag,
 		UNIT_NUMBER:   unitNumber,
 	}

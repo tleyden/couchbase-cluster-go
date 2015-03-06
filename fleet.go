@@ -33,17 +33,6 @@ type CouchbaseFleet struct {
 	SkipCleanSlateCheck bool
 }
 
-// this is used in the fleet template.
-// TODO: should use anon struct
-type FleetParams struct {
-	CB_VERSION    string
-	CONTAINER_TAG string
-}
-type SidekickFleetParams struct {
-	CONTAINER_TAG string
-	UNIT_NUMBER   int
-}
-
 func NewCouchbaseFleet(etcdServers []string) *CouchbaseFleet {
 
 	c := &CouchbaseFleet{}
@@ -347,7 +336,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 	assetName := "data/couchbase_node@.service.template"
 	content, err := Asset(assetName)
 	if err != nil {
-		return "", fmt.Errorf("could not find asset: %v.  err: %v", err)
+		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
 	}
 
 	// run through go template engine
@@ -356,7 +345,10 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 		return "", err
 	}
 
-	params := FleetParams{
+	params := struct {
+		CB_VERSION    string
+		CONTAINER_TAG string
+	}{
 		CB_VERSION:    c.CbVersion,
 		CONTAINER_TAG: c.ContainerTag,
 	}
