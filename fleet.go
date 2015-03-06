@@ -282,7 +282,6 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Couchbase node fleet unit: %v", unitFile)
 
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {
@@ -299,7 +298,6 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber string) (string
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Couchbase sidekick fleet unit: %v", unitFile)
 
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {
