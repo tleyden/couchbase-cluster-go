@@ -392,27 +392,13 @@ func (s SyncGwCluster) generateNodeFleetUnitFile() (string, error) {
 		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
 	}
 
-	// run through go template engine
-	tmpl, err := template.New("SyncGwUnitFile").Parse(string(content))
-	if err != nil {
-		return "", err
-	}
-
 	params := struct {
 		CONTAINER_TAG string
 	}{
 		CONTAINER_TAG: s.ContainerTag,
 	}
 
-	out := &bytes.Buffer{}
-
-	// execute template and write to dest
-	err = tmpl.Execute(out, params)
-	if err != nil {
-		return "", err
-	}
-
-	return out.String(), nil
+	return generateUnitFileFromTemplate(content, params)
 
 }
 
@@ -424,12 +410,6 @@ func (s SyncGwCluster) generateSidekickFleetUnitFile(unitNumber string) (string,
 		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
 	}
 
-	// run through go template engine
-	tmpl, err := template.New("SyncGwSidekickUnitFile").Parse(string(content))
-	if err != nil {
-		return "", err
-	}
-
 	params := struct {
 		CONTAINER_TAG string
 		UNIT_NUMBER   string
@@ -438,15 +418,7 @@ func (s SyncGwCluster) generateSidekickFleetUnitFile(unitNumber string) (string,
 		UNIT_NUMBER:   unitNumber,
 	}
 
-	out := &bytes.Buffer{}
-
-	// execute template and write to dest
-	err = tmpl.Execute(out, params)
-	if err != nil {
-		return "", err
-	}
-
-	return out.String(), nil
+	return generateUnitFileFromTemplate(content, params)
 
 }
 

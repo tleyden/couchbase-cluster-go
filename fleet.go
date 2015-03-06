@@ -339,12 +339,6 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
 	}
 
-	// run through go template engine
-	tmpl, err := template.New("NodeUnitFile").Parse(string(content))
-	if err != nil {
-		return "", err
-	}
-
 	params := struct {
 		CB_VERSION    string
 		CONTAINER_TAG string
@@ -353,15 +347,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 		CONTAINER_TAG: c.ContainerTag,
 	}
 
-	out := &bytes.Buffer{}
-
-	// execute template and write to dest
-	err = tmpl.Execute(out, params)
-	if err != nil {
-		return "", err
-	}
-
-	return out.String(), nil
+	return generateUnitFileFromTemplate(content, params)
 
 }
 
@@ -373,12 +359,6 @@ func (c CouchbaseFleet) generateSidekickFleetUnitFile(unitNumber string) (string
 		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
 	}
 
-	// run through go template engine
-	tmpl, err := template.New("SidekickUnitFile").Parse(string(content))
-	if err != nil {
-		return "", err
-	}
-
 	params := struct {
 		CB_VERSION    string
 		CONTAINER_TAG string
@@ -387,6 +367,18 @@ func (c CouchbaseFleet) generateSidekickFleetUnitFile(unitNumber string) (string
 		CB_VERSION:    c.CbVersion,
 		CONTAINER_TAG: c.ContainerTag,
 		UNIT_NUMBER:   unitNumber,
+	}
+
+	return generateUnitFileFromTemplate(content, params)
+
+}
+
+func generateUnitFileFromTemplate(templateContent []byte, params interface{}) (string, error) {
+
+	// run through go template engine
+	tmpl, err := template.New("Template").Parse(string(templateContent))
+	if err != nil {
+		return "", err
 	}
 
 	out := &bytes.Buffer{}
