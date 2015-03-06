@@ -344,30 +344,14 @@ func unitFileToJson(unitFileContent string) ([]byte, error) {
 
 func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 
-	content := `
-[Unit]
-Description=couchbase_node
-After=docker.service
-Requires=docker.service
-After=etcd.service
-Requires=etcd.service
+	assetName := "data/couchbase_node@.service.template"
+	content, err := Asset(assetName)
+	if err != nil {
+		return "", fmt.Errorf("could not find asset: %v.  err: %v", err)
+	}
 
-[Service]
-TimeoutStartSec=0
-TimeoutStopSec=0
-EnvironmentFile=/etc/environment
-ExecStartPre=-/usr/bin/docker kill couchbase
-ExecStartPre=-/usr/bin/docker rm couchbase
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }}
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
-ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-{{ .CB_VERSION }}:{{ .CONTAINER_TAG }} couchbase-start'
-ExecStop=/bin/bash -c '/usr/bin/docker run --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster remove-and-rebalance --local-ip $COREOS_PRIVATE_IPV4; sudo docker stop couchbase'
-
-[X-Fleet]
-Conflicts=couchbase_node*.service
-`
 	// run through go template engine
-	tmpl, err := template.New("NodeUnitFile").Parse(content)
+	tmpl, err := template.New("NodeUnitFile").Parse(string(content))
 	if err != nil {
 		return "", err
 	}
