@@ -367,32 +367,14 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 
 func (c CouchbaseFleet) generateSidekickFleetUnitFile(unitNumber string) (string, error) {
 
-	content := `
-[Unit]
-Description=couchbase_sidekick
-After=docker.service
-Requires=docker.service
-After=etcd.service
-Requires=etcd.service
-After=fleet.service
-Requires=fleet.service
-BindsTo=couchbase_node@{{ .UNIT_NUMBER }}.service
-After=couchbase_node@{{ .UNIT_NUMBER }}.service
+	assetName := "data/couchbase_sidekick@.service.template"
+	content, err := Asset(assetName)
+	if err != nil {
+		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
+	}
 
-[Service]
-TimeoutStartSec=0
-EnvironmentFile=/etc/environment
-ExecStartPre=-/usr/bin/docker kill couchbase-sidekick
-ExecStartPre=-/usr/bin/docker rm couchbase-sidekick
-ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
-ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'
-ExecStop=/usr/bin/docker stop couchbase-sidekick
-
-[X-Fleet]
-MachineOf=couchbase_node@{{ .UNIT_NUMBER }}.service
-`
 	// run through go template engine
-	tmpl, err := template.New("SidekickUnitFile").Parse(content)
+	tmpl, err := template.New("SidekickUnitFile").Parse(string(content))
 	if err != nil {
 		return "", err
 	}

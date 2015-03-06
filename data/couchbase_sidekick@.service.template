@@ -1,0 +1,22 @@
+[Unit]
+Description=couchbase_sidekick
+After=docker.service
+Requires=docker.service
+After=etcd.service
+Requires=etcd.service
+After=fleet.service
+Requires=fleet.service
+BindsTo=couchbase_node@{{ .UNIT_NUMBER }}.service
+After=couchbase_node@{{ .UNIT_NUMBER }}.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill couchbase-sidekick
+ExecStartPre=-/usr/bin/docker rm couchbase-sidekick
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
+ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster start-couchbase-sidekick --local-ip=$COREOS_PRIVATE_IPV4'
+ExecStop=/usr/bin/docker stop couchbase-sidekick
+
+[X-Fleet]
+MachineOf=couchbase_node@{{ .UNIT_NUMBER }}.service
