@@ -5,12 +5,12 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"strings"
 	"os"
+	"time"
+	"io/ioutil"
 	"path"
 	"path/filepath"
-	"strings"
-	"time"
 )
 
 func bindata_read(data []byte, name string) ([]byte, error) {
@@ -36,9 +36,9 @@ type asset struct {
 }
 
 type bindata_file_info struct {
-	name    string
-	size    int64
-	mode    os.FileMode
+	name string
+	size int64
+	mode os.FileMode
 	modTime time.Time
 }
 
@@ -77,7 +77,7 @@ func data_couchbase_node_service_template() (*asset, error) {
 	}
 
 	info := bindata_file_info{name: "data/couchbase_node@.service.template", size: 943, mode: os.FileMode(420), modTime: time.Unix(1425610643, 0)}
-	a := &asset{bytes: bytes, info: info}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
@@ -97,11 +97,11 @@ func data_couchbase_sidekick_service_template() (*asset, error) {
 	}
 
 	info := bindata_file_info{name: "data/couchbase_sidekick@.service.template", size: 858, mode: os.FileMode(420), modTime: time.Unix(1425654765, 0)}
-	a := &asset{bytes: bytes, info: info}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
-var _data_sync_gw_node_service_template = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x9c\x94\xc1\x6e\xdb\x30\x0c\x86\xef\x7a\x0a\x1d\x0a\x74\x1b\xa0\x68\x97\x5d\x3a\xf8\x10\x64\x69\xd1\x43\xd3\xa1\xc9\xb0\x0d\x41\x60\xb8\x32\xe3\x70\x95\x25\x4f\xa2\xe2\x06\x45\xdf\x7d\x72\xdd\x36\x73\xdc\xa0\x48\x6e\x02\xfd\x8b\xfc\x7e\x8a\xf4\xfc\x87\x41\x5a\xb0\x6f\xe0\x95\xc3\x8a\xd0\x9a\xc4\x6f\x8c\x4a\x8b\x3a\x35\x36\x07\x36\x5c\x12\xb8\x24\xb7\xea\x0e\xdc\xc0\x83\x5b\xa3\x02\x76\x03\x7f\x03\x3a\xf0\xbb\xf1\x56\x0c\xa4\xf2\xbe\xb4\x13\x6d\x85\x4b\x0d\x40\x7d\x65\x37\xcc\xe6\xd3\xf6\xb4\x60\x33\x2c\xc1\x06\x9a\x52\xe6\x68\x0a\x2a\xf9\xcc\xc6\x66\x8d\xce\x9a\x12\x0c\x9d\xa3\x86\x44\xc6\x2a\x12\xb6\x41\x36\xbe\x07\xf5\xa4\xff\xee\x20\x11\x32\x78\x27\x6f\xd1\xc8\x96\x9b\xdf\xa1\xd6\xfc\xd9\xee\x3b\x52\x57\xbe\x2d\xdc\xd5\x55\x21\xa6\x24\x0d\x9b\x1c\xcc\x17\xac\xef\x65\x73\x4b\x14\x19\x41\x9d\x6d\x84\xb2\x0e\xac\x3f\x7b\x78\xe0\x83\xd1\xf5\x64\x36\xbc\x9c\x8c\x6f\xd2\xd9\xf0\x82\x3f\x3e\x1e\x98\x56\xd9\xa0\x56\xb7\x99\x07\xa1\x74\xf0\xb1\x9b\xa2\xb0\x47\xe4\x75\xc1\x70\x21\x0c\x50\xb2\xb2\x9e\x8e\x02\xe7\xa1\xca\xa3\x4a\xd4\x2e\xab\xaa\x98\xb2\x47\xc6\xeb\x0c\x49\x04\x43\xa8\x45\xac\x67\xd0\x14\x07\x41\x89\x35\x97\x2b\x5b\x82\x6c\x20\xce\xb6\xc7\xe3\xfa\xb1\x8b\xdb\xda\xac\xa3\x43\xb3\xc4\x82\x3b\xa8\x1d\x12\xc4\xfa\x39\x78\x42\x93\x35\x2b\xf1\x5f\x7d\xd9\xea\x06\x7f\xbc\x35\x5b\x17\xc9\x13\x7e\x2c\xbf\xe2\x42\xf1\xd3\xe9\xef\xc9\x28\xbd\xf8\x99\x8e\xae\xaf\xae\x2e\x67\xc9\xc9\x87\x66\xf8\x15\x69\x5e\x00\xf1\x2d\xea\x40\xd9\xb2\xd3\xe6\xf8\xa9\x2c\x91\x3e\x7e\xe5\x7c\x4f\x4f\xb2\x12\x5e\xe6\xf0\xe0\x16\xbd\xf1\xa0\xaf\xee\x7d\xe3\xa2\x61\x3f\xe9\xb2\x73\x51\xf0\x3d\xee\x4f\x9f\xed\xdb\xaa\xf7\x80\x3e\x06\x5f\xd7\x85\xcd\x7f\x89\xf3\x66\xa5\x17\x6c\x14\x6f\x6b\x54\xe4\x3b\xff\x98\x4f\x2f\xbb\xfe\x2f\x00\x00\xff\xff\x3e\xd3\x36\x77\x8c\x04\x00\x00")
+var _data_sync_gw_node_service_template = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x9c\x54\xb1\x6e\xdb\x30\x10\xdd\xf9\x15\x1c\x02\xa4\x2d\x40\xb1\x4b\x97\x14\x1a\x0c\xd7\x09\x32\xc4\x29\x62\x17\x6d\x61\x18\x82\x42\x9d\xe5\x6b\x28\x52\x25\x8f\x56\x8c\x20\xff\x5e\x2a\x4a\xe2\xca\x4e\x60\xd8\x1b\x71\x7a\x77\xf7\xde\xa3\x1e\x67\x3f\x0c\xd2\x9c\x7d\x03\xaf\x1c\xd6\x84\xd6\xa4\x7e\x6d\x54\x56\x36\x99\xb1\x05\xb0\xc1\x82\xc0\xa5\x85\x55\x77\xe0\x12\x0f\x6e\x85\x0a\xd8\x0d\xfc\x0d\xe8\xc0\x6f\xd7\x3b\x30\x90\x2a\x76\xa1\xbd\x6a\x07\x5c\x68\x00\xda\x45\xf6\xcb\x6c\x36\xe9\x4e\x73\x36\xc5\x0a\x6c\xa0\x09\xe5\x8e\x26\xa0\xd2\xcf\x6c\x64\x56\xe8\xac\xa9\xc0\xd0\x39\x6a\x48\x65\xdc\x22\x61\x53\x64\xa3\x7b\x50\x4f\xf8\xef\x0e\x52\x21\x83\x77\xf2\x16\x8d\xec\x78\xf3\x3b\xd4\x9a\x3f\xcb\xdd\x03\x75\xd5\xdb\xc0\x6d\x5c\x1d\xe2\x48\xd2\xb0\x2e\xc0\x7c\xc1\xe6\x5e\xb6\x5d\xa2\xcc\x09\x9a\x7c\x2d\x94\x75\x60\xfd\xd9\xc3\x03\x4f\x86\xd7\xe3\xe9\xe0\x72\x3c\xba\xc9\xa6\x83\x0b\xfe\xf8\x78\xe0\x58\x65\x83\x5a\xde\xe6\x1e\x84\xd2\xc1\x47\x37\x45\x69\x8f\x98\xeb\x82\xe1\x42\x18\xa0\x74\x69\x3d\x1d\x45\x9c\x87\xba\x88\x28\xd1\xb8\xbc\xae\xe3\xc8\x1d\x66\xbc\xc9\x91\x44\x30\x84\x5a\xc4\x7d\x06\x4d\x79\x10\x29\xb1\xe2\x72\x69\x2b\x90\x2d\x89\xb3\xcd\xf1\x38\x3f\xb6\xe9\x76\x32\x9b\xa8\xd0\x2c\xb0\xe4\x0e\x1a\x87\x04\x71\x7f\x01\x9e\xd0\xe4\x6d\x24\xfe\xdb\x2f\x93\x7e\x43\xf2\xc7\x5b\xb3\x91\x93\x3e\xe9\x88\x3c\x96\x5c\x28\x7e\x3a\xf9\x3d\x1e\x66\x17\x3f\xb3\xe1\xf5\xd5\xd5\xe5\x34\x3d\xf9\xd0\xa6\x40\x91\xe6\x25\x10\xdf\x70\x4e\x94\xad\x7a\x7e\xc7\x4f\x55\x85\xf4\xf1\x2b\xe7\xef\x98\x93\x57\xf0\xf2\x43\x1e\xec\xd5\x1b\x37\xfb\x6a\x83\x6f\x55\xb4\xdc\x4f\xfa\xdc\xb9\x28\xf9\x3e\x1b\x4e\x9f\x7d\xb0\xf5\xce\x95\xfa\x58\x7c\x0d\x10\x9b\xfd\x12\xe7\x6d\xc8\xe7\x6c\x18\xbb\x35\x2a\xf2\xbd\x57\xe7\xd3\x4b\xfa\xff\x05\x00\x00\xff\xff\xf1\xff\x6e\xa1\x9e\x04\x00\x00")
 
 func data_sync_gw_node_service_template_bytes() ([]byte, error) {
 	return bindata_read(
@@ -116,8 +116,8 @@ func data_sync_gw_node_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1164, mode: os.FileMode(420), modTime: time.Unix(1425612602, 0)}
-	a := &asset{bytes: bytes, info: info}
+	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1182, mode: os.FileMode(420), modTime: time.Unix(1425659569, 0)}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
@@ -137,7 +137,7 @@ func data_sync_gw_node_service_template_() (*asset, error) {
 	}
 
 	info := bindata_file_info{name: "data/sync_gw_node@.service.template~", size: 1108, mode: os.FileMode(420), modTime: time.Unix(1425612410, 0)}
-	a := &asset{bytes: bytes, info: info}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
@@ -157,7 +157,7 @@ func data_sync_gw_sidekick_service_template() (*asset, error) {
 	}
 
 	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template", size: 789, mode: os.FileMode(420), modTime: time.Unix(1425654434, 0)}
-	a := &asset{bytes: bytes, info: info}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
@@ -177,7 +177,7 @@ func data_sync_gw_sidekick_service_template_() (*asset, error) {
 	}
 
 	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template~", size: 710, mode: os.FileMode(420), modTime: time.Unix(1425612431, 0)}
-	a := &asset{bytes: bytes, info: info}
+	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
 
@@ -222,12 +222,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"data/couchbase_node@.service.template":     data_couchbase_node_service_template,
+	"data/couchbase_node@.service.template": data_couchbase_node_service_template,
 	"data/couchbase_sidekick@.service.template": data_couchbase_sidekick_service_template,
-	"data/sync_gw_node@.service.template":       data_sync_gw_node_service_template,
-	"data/sync_gw_node@.service.template~":      data_sync_gw_node_service_template_,
-	"data/sync_gw_sidekick@.service.template":   data_sync_gw_sidekick_service_template,
-	"data/sync_gw_sidekick@.service.template~":  data_sync_gw_sidekick_service_template_,
+	"data/sync_gw_node@.service.template": data_sync_gw_node_service_template,
+	"data/sync_gw_node@.service.template~": data_sync_gw_node_service_template_,
+	"data/sync_gw_sidekick@.service.template": data_sync_gw_sidekick_service_template,
+	"data/sync_gw_sidekick@.service.template~": data_sync_gw_sidekick_service_template_,
 }
 
 // AssetDir returns the file names below a certain
@@ -266,63 +266,69 @@ func AssetDir(name string) ([]string, error) {
 }
 
 type _bintree_t struct {
-	Func     func() (*asset, error)
+	Func func() (*asset, error)
 	Children map[string]*_bintree_t
 }
-
 var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 	"data": &_bintree_t{nil, map[string]*_bintree_t{
-		"couchbase_node@.service.template":     &_bintree_t{data_couchbase_node_service_template, map[string]*_bintree_t{}},
-		"couchbase_sidekick@.service.template": &_bintree_t{data_couchbase_sidekick_service_template, map[string]*_bintree_t{}},
-		"sync_gw_node@.service.template":       &_bintree_t{data_sync_gw_node_service_template, map[string]*_bintree_t{}},
-		"sync_gw_node@.service.template~":      &_bintree_t{data_sync_gw_node_service_template_, map[string]*_bintree_t{}},
-		"sync_gw_sidekick@.service.template":   &_bintree_t{data_sync_gw_sidekick_service_template, map[string]*_bintree_t{}},
-		"sync_gw_sidekick@.service.template~":  &_bintree_t{data_sync_gw_sidekick_service_template_, map[string]*_bintree_t{}},
+		"couchbase_node@.service.template": &_bintree_t{data_couchbase_node_service_template, map[string]*_bintree_t{
+		}},
+		"couchbase_sidekick@.service.template": &_bintree_t{data_couchbase_sidekick_service_template, map[string]*_bintree_t{
+		}},
+		"sync_gw_node@.service.template": &_bintree_t{data_sync_gw_node_service_template, map[string]*_bintree_t{
+		}},
+		"sync_gw_node@.service.template~": &_bintree_t{data_sync_gw_node_service_template_, map[string]*_bintree_t{
+		}},
+		"sync_gw_sidekick@.service.template": &_bintree_t{data_sync_gw_sidekick_service_template, map[string]*_bintree_t{
+		}},
+		"sync_gw_sidekick@.service.template~": &_bintree_t{data_sync_gw_sidekick_service_template_, map[string]*_bintree_t{
+		}},
 	}},
 }}
 
 // Restore an asset under the given directory
 func RestoreAsset(dir, name string) error {
-	data, err := Asset(name)
-	if err != nil {
-		return err
-	}
-	info, err := AssetInfo(name)
-	if err != nil {
-		return err
-	}
-	err = os.MkdirAll(_filePath(dir, path.Dir(name)), os.FileMode(0755))
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
-	if err != nil {
-		return err
-	}
-	err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
-	if err != nil {
-		return err
-	}
-	return nil
+        data, err := Asset(name)
+        if err != nil {
+                return err
+        }
+        info, err := AssetInfo(name)
+        if err != nil {
+                return err
+        }
+        err = os.MkdirAll(_filePath(dir, path.Dir(name)), os.FileMode(0755))
+        if err != nil {
+                return err
+        }
+        err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
+        if err != nil {
+                return err
+        }
+        err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
+        if err != nil {
+                return err
+        }
+        return nil
 }
 
 // Restore assets under the given directory recursively
 func RestoreAssets(dir, name string) error {
-	children, err := AssetDir(name)
-	if err != nil { // File
-		return RestoreAsset(dir, name)
-	} else { // Dir
-		for _, child := range children {
-			err = RestoreAssets(dir, path.Join(name, child))
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+        children, err := AssetDir(name)
+        if err != nil { // File
+                return RestoreAsset(dir, name)
+        } else { // Dir
+                for _, child := range children {
+                        err = RestoreAssets(dir, path.Join(name, child))
+                        if err != nil {
+                                return err
+                        }
+                }
+        }
+        return nil
 }
 
 func _filePath(dir, name string) string {
-	cannonicalName := strings.Replace(name, "\\", "/", -1)
-	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
+        cannonicalName := strings.Replace(name, "\\", "/", -1)
+        return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
+
