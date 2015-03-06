@@ -384,110 +384,16 @@ func (s SyncGwCluster) kickOffFleetUnits() error {
 	return nil
 }
 
-func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
+func (s SyncGwCluster) generateNodeFleetUnitFile() (string, error) {
 
-	fleetUnitJsonTemplate := `
-{
-    "desiredState":"launched",
-    "options":[
-        {
-            "section":"Unit",
-            "name":"Description",
-            "value":"sync_gw_node"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"docker.service"
-        },
-        {
-            "section":"Unit",
-            "name":"Requires",
-            "value":"docker.service"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"etcd.service"
-        },
-        {
-            "section":"Unit",
-            "name":"Requires",
-            "value":"etcd.service"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"fleet.service"
-        },
-        {
-            "section":"Unit",
-            "name":"Requires",
-            "value":"fleet.service"
-        },
-        {
-            "section":"Service",
-            "name":"TimeoutStartSec",
-            "value":"0"
-        },
-        {
-            "section":"Service",
-            "name":"EnvironmentFile",
-            "value":"/etc/environment"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker kill sync_gw"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker rm sync_gw"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }}"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker run --net=host tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster wait-until-running"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker run --net=host -v /home/core:/home/core tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-config rewrite --destination /home/core/config.json"
-        },
+	assetName := "data/sync_gw_node@.service.template"
+	content, err := Asset(assetName)
+	if err != nil {
+		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
+	}
 
-        {
-            "section":"Service",
-            "name":"ExecStart",
-            "value":"/bin/bash -c 'SYNC_GW_COMMIT=$(etcdctl get /couchbase.com/sync-gateway/commit);  /usr/bin/docker run --name sync_gw --net=host -v /home/core:/home/core tleyden5iwx/sync-gateway-coreos sync-gw-start -c $SYNC_GW_COMMIT -g  /home/core/config.json'"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStop",
-            "value":"/usr/bin/docker stop sync_gw"
-        },
-        {
-            "section":"X-Fleet",
-            "name":"Conflicts",
-            "value":"sync_gw_node*.service"
-        }
-    ]
-}
-`
-
-	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
-
-	tmpl, err := template.New("sgw_fleet").Parse(fleetUnitJsonTemplate)
+	// run through go template engine
+	tmpl, err := template.New("SyncGwUnitFile").Parse(string(content))
 	if err != nil {
 		return "", err
 	}
@@ -507,6 +413,57 @@ func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
 	}
 
 	return out.String(), nil
+
+}
+
+func (s SyncGwCluster) generateSidekickFleetUnitFile(unitNumber string) (string, error) {
+
+	assetName := "data/sync_gw_sidekick@.service.template"
+	content, err := Asset(assetName)
+	if err != nil {
+		return "", fmt.Errorf("could not find asset: %v.  err: %v", assetName, err)
+	}
+
+	// run through go template engine
+	tmpl, err := template.New("SyncGwSidekickUnitFile").Parse(string(content))
+	if err != nil {
+		return "", err
+	}
+
+	params := struct {
+		CONTAINER_TAG string
+		UNIT_NUMBER   string
+	}{
+		CONTAINER_TAG: s.ContainerTag,
+		UNIT_NUMBER:   unitNumber,
+	}
+
+	out := &bytes.Buffer{}
+
+	// execute template and write to dest
+	err = tmpl.Execute(out, params)
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+
+}
+
+func (s SyncGwCluster) generateFleetUnitJson() (string, error) {
+
+	unitFile, err := s.generateNodeFleetUnitFile()
+	if err != nil {
+		return "", err
+	}
+	log.Printf("Sync gw node fleet unit: %v", unitFile)
+
+	jsonBytes, err := unitFileToJson(unitFile)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), err
 
 }
 
@@ -530,113 +487,19 @@ func (s SyncGwCluster) kickOffFleetSidekickUnits() error {
 
 func (s SyncGwCluster) generateFleetSidekickUnitJson(unitNumber int) (string, error) {
 
-	fleetUnitJsonTemplate := `
-{
-    "desiredState":"launched",
-    "options":[
-       {
-            "section":"Unit",
-            "name":"Description",
-            "value":"sync_gw_sidekick"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"docker.service"
-        },
-        {
-            "section":"Unit",
-            "name":"Requires",
-            "value":"docker.service"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"etcd.service"
-        },
-        {
-            "section":"Unit",
-            "name":"Requires",
-            "value":"etcd.service"
-        },
-        {
-            "section":"Unit",
-            "name":"BindsTo",
-            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
-        },
-        {
-            "section":"Unit",
-            "name":"After",
-            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
-        },
-        {
-            "section":"Service",
-            "name":"TimeoutStartSec",
-            "value":"0"
-        },
-        {
-            "section":"Service",
-            "name":"EnvironmentFile",
-            "value":"/etc/environment"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker kill sync-gw-sidekick"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"-/usr/bin/docker rm sync-gw-sidekick"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStartPre",
-            "value":"/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStart",
-            "value":"/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-cluster launch-sidekick --local-ip=$COREOS_PRIVATE_IPV4'"
-        },
-        {
-            "section":"Service",
-            "name":"ExecStop",
-            "value":"/usr/bin/docker stop sync-gw-sidekick"
-        },
-        {
-            "section":"X-Fleet",
-            "name":"MachineOf",
-            "value":"sync_gw_node@{{ .UNIT_NUMBER }}.service"
-        }
-    ]
-}
-`
+	unitNumberStr := fmt.Sprintf("%v", unitNumber)
+	unitFile, err := s.generateSidekickFleetUnitFile(unitNumberStr)
+	if err != nil {
+		return "", err
+	}
+	log.Printf("Sync gw sidekick fleet unit: %v", unitFile)
 
-	log.Printf("Fleet template: %v", fleetUnitJsonTemplate)
-
-	tmpl, err := template.New("sgw_fleet_sidekick").Parse(fleetUnitJsonTemplate)
+	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {
 		return "", err
 	}
 
-	params := struct {
-		CONTAINER_TAG string
-		UNIT_NUMBER   int
-	}{
-		CONTAINER_TAG: s.ContainerTag,
-		UNIT_NUMBER:   unitNumber,
-	}
-
-	out := &bytes.Buffer{}
-
-	// execute template and write to dest
-	err = tmpl.Execute(out, params)
-	if err != nil {
-		return "", err
-	}
-
-	return out.String(), nil
+	return string(jsonBytes), err
 
 }
 

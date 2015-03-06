@@ -1,0 +1,20 @@
+[Unit]
+Description=sync_gw_sidekick
+After=docker.service
+Requires=docker.service
+After=etcd.service
+Requires=etcd.service
+BindsTo=sync_gw_node@{{ .UNIT_NUMBER }}.service
+After=sync_gw_node@{{ .UNIT_NUMBER }}.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill sync-gw-sidekick
+ExecStartPre=-/usr/bin/docker rm sync-gw-sidekick
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
+ExecStart=/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-cluster launch-sidekick --local-ip=$COREOS_PRIVATE_IPV4'
+ExecStop=/usr/bin/docker stop sync-gw-sidekick
+
+[X-Fleet]
+MachineOf=sync_gw_node@{{ .UNIT_NUMBER }}.service

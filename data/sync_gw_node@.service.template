@@ -1,0 +1,23 @@
+[Unit]
+Description=sync_gw_node
+After=docker.service
+Requires=docker.service
+After=etcd.service
+Requires=etcd.service
+After=fleet.service
+Requires=fleet.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill sync_gw
+ExecStartPre=-/usr/bin/docker rm sync_gw
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }}
+ExecStartPre=/usr/bin/docker pull tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }}
+ExecStartPre=/usr/bin/docker run --net=host tleyden5iwx/sync-gateway-coreos:{{ .CONTAINER_TAG }} update-wrapper couchbase-cluster wait-until-running
+ExecStartPre=/usr/bin/docker run --net=host -v /home/core:/home/core tleyden5iwx/couchbase-cluster-go:{{ .CONTAINER_TAG }} update-wrapper sync-gw-config rewrite --destination /home/core/config.json
+ExecStart=/bin/bash -c 'SYNC_GW_COMMIT=$(etcdctl get /couchbase.com/sync-gateway/commit);  /usr/bin/docker run --name sync_gw --net=host -v /home/core:/home/core tleyden5iwx/sync-gateway-coreos sync-gw-start -c $SYNC_GW_COMMIT -g  /home/core/config.json'
+ExecStop=/usr/bin/docker stop sync_gw
+
+[X-Fleet]
+Conflicts=sync_gw_node*.service
