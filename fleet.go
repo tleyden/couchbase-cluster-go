@@ -118,13 +118,31 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 func (c CouchbaseFleet) StopUnits() error {
 
-	// set the /couchbase.com/remove-rebalance-disabled flag in etcd with a TTL
+	// set the /couchbase.com/remove-rebalance-disabled flag in etcd since
+	// otherwise, it will try to remove and rebalance the node, which is not
+	// what we want when stopping all units.
+
+	// set the ttl to be 5 minutes, since there's nothing in place yet to
+	// block until all the units have stopped
+	// (TODO: this should get added .. it waits for all units to stop, and then
+	// it removes the /couchbase.com/remove-rebalance-disabled flag)
+	ttlSeconds := uint64(300)
+	_, err := c.etcdClient.Set(KEY_REMOVE_REBALANCE_DISABLED, "true", ttlSeconds)
+	if err != nil {
+		return err
+	}
 
 	// call ManipulateUnits with a function that will stop them
+	unitStopper := func(unit *schema.Unit) error {
 
-	// update the desiredState of each one to inactive
+		// stop the unit by updating desiredState to inactive
+		// and posting to fleet api
+		endpointUrl := fmt.Sprintf("%v/%v", FLEET_API_ENDPOINT, unit.Name)
+		return PUT(endpointUrl, `{"desiredState": "inactive"}`)
 
-	// unset the /couchbase.com/remove-rebalance-disabled flag in etcd
+	}
+
+	c.ManipulateUnits(unitStopper)
 
 	return nil
 }
