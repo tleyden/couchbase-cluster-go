@@ -200,6 +200,8 @@ func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 	sleepSeconds := 0
 	nextPageToken := ""
 
+	log.Printf("findAllFleetUnits()")
+
 	worker := func() (finished bool, err error) {
 
 		// append a next page token to url if needed
@@ -208,6 +210,8 @@ func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 		} else {
 			endpointUrl = fmt.Sprintf("%v/units", FLEET_API_ENDPOINT)
 		}
+
+		log.Printf("Getting units from :%v", endpointUrl)
 
 		unitPage := schema.UnitPage{}
 		if err := getJsonData(endpointUrl, &unitPage); err != nil {
