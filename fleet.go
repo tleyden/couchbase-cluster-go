@@ -179,7 +179,6 @@ func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 		if err := getJsonData(endpointUrl, &unitPage); err != nil {
 			return true, err
 		}
-		log.Printf("unit page: %+v", unitPage)
 
 		// add all units to return value
 		for _, unit := range unitPage.Units {

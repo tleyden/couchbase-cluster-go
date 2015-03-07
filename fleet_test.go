@@ -44,7 +44,7 @@ func TestFindAllUnits(t *testing.T) {
 	}
 	assert.True(t, err == nil)
 
-	assert.True(t, len(allUnits) > 0)
+	assert.Equals(t, len(allUnits), 20)
 
 }
 
