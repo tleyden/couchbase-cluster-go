@@ -463,7 +463,6 @@ func (s SyncGwCluster) generateFleetSidekickUnitJson(unitNumber int) (string, er
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Sync gw sidekick fleet unit: %v", unitFile)
 
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {

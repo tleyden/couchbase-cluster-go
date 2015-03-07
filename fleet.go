@@ -18,9 +18,12 @@ import (
 )
 
 const (
-	FLEET_API_ENDPOINT = "http://localhost:49153/fleet/v1"
 	UNIT_NAME_NODE     = "couchbase_node"
 	UNIT_NAME_SIDEKICK = "couchbase_sidekick"
+)
+
+var (
+	FLEET_API_ENDPOINT = "http://localhost:49153/fleet/v1"
 )
 
 type CouchbaseFleet struct {
