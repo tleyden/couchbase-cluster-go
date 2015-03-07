@@ -1,6 +1,7 @@
 package cbcluster
 
 import (
+	"log"
 	"testing"
 
 	"github.com/couchbaselabs/go.assert"
@@ -31,7 +32,11 @@ func TestFindAllUnits(t *testing.T) {
 	mockFleetApi := fakehttp.NewHTTPServerWithPort(5977)
 	mockFleetApi.Start()
 
-	mockFleetApi.Response(200, jsonHeaders(), "{}")
+	assetName := "data-test/fleet_api_units.json"
+	mockResponse, err := Asset(assetName)
+	log.Printf("mockResponse: %v", string(mockResponse))
+	assert.True(t, err == nil)
+	mockFleetApi.Response(200, jsonHeaders(), string(mockResponse))
 
 	c := CouchbaseFleet{}
 	allUnits, err := c.findAllFleetUnits()

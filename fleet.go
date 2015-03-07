@@ -160,6 +160,20 @@ func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
 
 func (c CouchbaseFleet) findAllFleetUnits() (units []string, err error) {
 
+	endpointUrl := fmt.Sprintf("%v/units", FLEET_API_ENDPOINT)
+
+	jsonMap := map[string]interface{}{}
+	if err := getJsonData(endpointUrl, &jsonMap); err != nil {
+		return nil, err
+	}
+
+	unitListRaw, ok := jsonMap["units"]
+	if !ok {
+		return nil, fmt.Errorf("Unexpected json: %+v", jsonMap)
+	}
+
+	log.Printf("unitListRaw: %v", unitListRaw)
+
 	return nil, nil
 
 }
