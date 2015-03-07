@@ -112,6 +112,61 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 }
 
+func (c CouchbaseFleet) StopUnits() error {
+
+	// set the /couchbase.com/remove-rebalance-disabled flag in etcd with a TTL
+
+	// call ManipulateUnits with a function that will stop them
+
+	// update the desiredState of each one to inactive
+
+	// unset the /couchbase.com/remove-rebalance-disabled flag in etcd
+
+	return nil
+}
+
+func (c CouchbaseFleet) DestroyUnits() error {
+
+	return nil
+}
+
+type UnitManipulator func(unitName string) error
+
+func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
+
+	// find all the units
+	allUnits, err := c.findAllFleetUnits()
+	if err != nil {
+		return err
+	}
+
+	unitNamePatterns := []string{UNIT_NAME_NODE, UNIT_NAME_SIDEKICK}
+
+	// filter the ones out that have the name pattern we care about (couchbase_node)
+	units, err := c.filterFleetUnits(allUnits, unitNamePatterns)
+
+	for _, unit := range units {
+		if err := unitManipulator(unit); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func (c CouchbaseFleet) findAllFleetUnits() (units []string, err error) {
+
+	return nil, nil
+
+}
+
+func (c CouchbaseFleet) filterFleetUnits(units, filters []string) (filtered []string, err error) {
+
+	return nil, nil
+
+}
+
 func (c CouchbaseFleet) GenerateUnits(outputDir string) error {
 
 	// generate node unit
