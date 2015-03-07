@@ -147,7 +147,7 @@ func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
 	unitNamePatterns := []string{UNIT_NAME_NODE, UNIT_NAME_SIDEKICK}
 
 	// filter the ones out that have the name pattern we care about (couchbase_node)
-	units, err := c.filterFleetUnits(allUnits, unitNamePatterns)
+	units := c.filterFleetUnits(allUnits, unitNamePatterns)
 
 	for _, unit := range units {
 		if err := unitManipulator(unit); err != nil {
@@ -207,9 +207,25 @@ func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 
 }
 
-func (c CouchbaseFleet) filterFleetUnits(units []*schema.Unit, filters []string) (filteredUnits []*schema.Unit, err error) {
+func (c CouchbaseFleet) filterFleetUnits(units []*schema.Unit, filters []string) (filteredUnits []*schema.Unit) {
 
-	return nil, nil
+	stringContainsAny := func(s string, filters []string) bool {
+		for _, filter := range filters {
+			if strings.Contains(s, filter) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, unit := range units {
+
+		if stringContainsAny(unit.Name, filters) {
+			filteredUnits = append(filteredUnits, unit)
+		}
+	}
+
+	return filteredUnits
 
 }
 
