@@ -142,14 +142,30 @@ func (c CouchbaseFleet) StopUnits() error {
 
 	}
 
-	c.ManipulateUnits(unitStopper)
+	return c.ManipulateUnits(unitStopper)
 
-	return nil
 }
 
 func (c CouchbaseFleet) DestroyUnits() error {
 
-	return nil
+	ttlSeconds := uint64(300)
+	_, err := c.etcdClient.Set(KEY_REMOVE_REBALANCE_DISABLED, "true", ttlSeconds)
+	if err != nil {
+		return err
+	}
+
+	// call ManipulateUnits with a function that will stop them
+	unitDestroyer := func(unit *schema.Unit) error {
+
+		// stop the unit by updating desiredState to inactive
+		// and posting to fleet api
+		endpointUrl := fmt.Sprintf("%v/%v", FLEET_API_ENDPOINT, unit.Name)
+		return DELETE(endpointUrl)
+
+	}
+
+	return c.ManipulateUnits(unitDestroyer)
+
 }
 
 type UnitManipulator func(unit *schema.Unit) error
@@ -543,6 +559,30 @@ func launchFleetUnitN(unitName string, unitNumber int, fleetUnitJson string) err
 	endpointUrl := fmt.Sprintf("%v/units/%v@%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
 
 	return PUT(endpointUrl, fleetUnitJson)
+
+}
+
+func DELETE(endpointUrl string) error {
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("DELETE", endpointUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("Unexpected status code in response")
+	}
+
+	return nil
 
 }
 
