@@ -138,6 +138,7 @@ func (c CouchbaseFleet) StopUnits() error {
 		// stop the unit by updating desiredState to inactive
 		// and posting to fleet api
 		endpointUrl := fmt.Sprintf("%v/%v", FLEET_API_ENDPOINT, unit.Name)
+		log.Printf("Stop unit via PUT %v", endpointUrl)
 		return PUT(endpointUrl, `{"desiredState": "inactive"}`)
 
 	}
@@ -583,7 +584,7 @@ func DELETE(endpointUrl string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Unexpected status code in response")
+		return fmt.Errorf("DELETE: Unexpected status code in response")
 	}
 
 	return nil
@@ -614,7 +615,7 @@ func PUT(endpointUrl, json string) error {
 
 	log.Printf("response body: %v", string(bodyStr))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Unexpected status code in response")
+		return fmt.Errorf("PUT: Unexpected status code in response")
 	}
 
 	return nil
