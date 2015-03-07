@@ -14,6 +14,7 @@ func main() {
 Usage:
   couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] [--skip-clean-slate-check]
   couchbase-fleet stop [--etcd-servers=<server-list>]
+  couchbase-fleet destroy [--etcd-servers=<server-list>]
   couchbase-fleet generate-units --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] --output-dir=<output_dir>
   couchbase-fleet -h | --help
 
@@ -50,6 +51,13 @@ Options:
 
 	if cbcluster.IsCommandEnabled(arguments, "stop") {
 		if err := stopUnits(arguments); err != nil {
+			log.Fatalf("Failed: %v", err)
+		}
+		return
+	}
+
+	if cbcluster.IsCommandEnabled(arguments, "destroy") {
+		if err := destroyUnits(arguments); err != nil {
 			log.Fatalf("Failed: %v", err)
 		}
 		return
@@ -104,5 +112,15 @@ func stopUnits(arguments map[string]interface{}) error {
 	couchbaseFleet := cbcluster.NewCouchbaseFleet(etcdServers)
 
 	return couchbaseFleet.StopUnits()
+
+}
+
+func destroyUnits(arguments map[string]interface{}) error {
+
+	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
+
+	couchbaseFleet := cbcluster.NewCouchbaseFleet(etcdServers)
+
+	return couchbaseFleet.DestroyUnits()
 
 }
