@@ -137,7 +137,7 @@ func (c CouchbaseFleet) StopUnits() error {
 
 		// stop the unit by updating desiredState to inactive
 		// and posting to fleet api
-		endpointUrl := fmt.Sprintf("%v/%v", FLEET_API_ENDPOINT, unit.Name)
+		endpointUrl := fmt.Sprintf("%v/units/%v", FLEET_API_ENDPOINT, unit.Name)
 		log.Printf("Stop unit %v via PUT %v", unit.Name, endpointUrl)
 		return PUT(endpointUrl, `{"desiredState": "inactive"}`)
 
@@ -160,7 +160,7 @@ func (c CouchbaseFleet) DestroyUnits() error {
 
 		// stop the unit by updating desiredState to inactive
 		// and posting to fleet api
-		endpointUrl := fmt.Sprintf("%v/%v", FLEET_API_ENDPOINT, unit.Name)
+		endpointUrl := fmt.Sprintf("%v/units/%v", FLEET_API_ENDPOINT, unit.Name)
 		return DELETE(endpointUrl)
 
 	}
