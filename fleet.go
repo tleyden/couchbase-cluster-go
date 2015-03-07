@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/fleet/schema"
 	"github.com/coreos/go-systemd/unit"
 	"github.com/tleyden/go-etcd/etcd"
 )
@@ -133,7 +134,7 @@ func (c CouchbaseFleet) DestroyUnits() error {
 	return nil
 }
 
-type UnitManipulator func(unitName string) error
+type UnitManipulator func(unit *schema.Unit) error
 
 func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
 
@@ -158,27 +159,56 @@ func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
 
 }
 
-func (c CouchbaseFleet) findAllFleetUnits() (units []string, err error) {
+func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 
-	endpointUrl := fmt.Sprintf("%v/units", FLEET_API_ENDPOINT)
+	endpointUrl := ""
+	maxAttempts := 10000
+	sleepSeconds := 0
+	nextPageToken := ""
 
-	jsonMap := map[string]interface{}{}
-	if err := getJsonData(endpointUrl, &jsonMap); err != nil {
+	worker := func() (finished bool, err error) {
+
+		// append a next page token to url if needed
+		if len(nextPageToken) > 0 {
+			endpointUrl = fmt.Sprintf("%v/units?nextPageToken=%v", FLEET_API_ENDPOINT, nextPageToken)
+		} else {
+			endpointUrl = fmt.Sprintf("%v/units", FLEET_API_ENDPOINT)
+		}
+
+		unitPage := schema.UnitPage{}
+		if err := getJsonData(endpointUrl, &unitPage); err != nil {
+			return true, err
+		}
+		log.Printf("unit page: %+v", unitPage)
+
+		// add all units to return value
+		for _, unit := range unitPage.Units {
+			units = append(units, unit)
+		}
+
+		// if no more pages, we are finished
+		areWeFinished := len(unitPage.NextPageToken) == 0
+
+		return areWeFinished, nil
+
+	}
+
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		return true, sleepSeconds
+	}
+
+	if err := RetryLoop(worker, sleeper); err != nil {
 		return nil, err
 	}
 
-	unitListRaw, ok := jsonMap["units"]
-	if !ok {
-		return nil, fmt.Errorf("Unexpected json: %+v", jsonMap)
-	}
-
-	log.Printf("unitListRaw: %v", unitListRaw)
-
-	return nil, nil
+	return units, nil
 
 }
 
-func (c CouchbaseFleet) filterFleetUnits(units, filters []string) (filtered []string, err error) {
+func (c CouchbaseFleet) filterFleetUnits(units []*schema.Unit, filters []string) (filteredUnits []*schema.Unit, err error) {
 
 	return nil, nil
 

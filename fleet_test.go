@@ -34,15 +34,17 @@ func TestFindAllUnits(t *testing.T) {
 
 	assetName := "data-test/fleet_api_units.json"
 	mockResponse, err := Asset(assetName)
-	log.Printf("mockResponse: %v", string(mockResponse))
 	assert.True(t, err == nil)
 	mockFleetApi.Response(200, jsonHeaders(), string(mockResponse))
 
 	c := CouchbaseFleet{}
 	allUnits, err := c.findAllFleetUnits()
+	if err != nil {
+		log.Printf("err: %v", err)
+	}
 	assert.True(t, err == nil)
 
-	assert.True(t, len(allUnits) == 0)
+	assert.True(t, len(allUnits) > 0)
 
 }
 
