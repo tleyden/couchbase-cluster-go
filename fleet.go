@@ -211,7 +211,7 @@ func (c CouchbaseFleet) findAllFleetUnits() (units []*schema.Unit, err error) {
 			endpointUrl = fmt.Sprintf("%v/units", FLEET_API_ENDPOINT)
 		}
 
-		log.Printf("Getting units from :%v", endpointUrl)
+		log.Printf("Getting units from %v", endpointUrl)
 
 		unitPage := schema.UnitPage{}
 		if err := getJsonData(endpointUrl, &unitPage); err != nil {
