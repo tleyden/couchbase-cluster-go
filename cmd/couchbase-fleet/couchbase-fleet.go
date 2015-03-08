@@ -13,8 +13,8 @@ func main() {
 
 Usage:
   couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] [--skip-clean-slate-check]
-  couchbase-fleet stop [--etcd-servers=<server-list>]
-  couchbase-fleet destroy [--etcd-servers=<server-list>]
+  couchbase-fleet stop [--all-units] [--etcd-servers=<server-list>]
+  couchbase-fleet destroy [--all-units] [--etcd-servers=<server-list>]
   couchbase-fleet generate-units --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] --output-dir=<output_dir>
   couchbase-fleet -h | --help
 
@@ -111,7 +111,9 @@ func stopUnits(arguments map[string]interface{}) error {
 
 	couchbaseFleet := cbcluster.NewCouchbaseFleet(etcdServers)
 
-	return couchbaseFleet.StopUnits()
+	allUnits := cbcluster.ExtractBoolArg(arguments, "--all-units")
+
+	return couchbaseFleet.StopUnits(allUnits)
 
 }
 
@@ -121,6 +123,8 @@ func destroyUnits(arguments map[string]interface{}) error {
 
 	couchbaseFleet := cbcluster.NewCouchbaseFleet(etcdServers)
 
-	return couchbaseFleet.DestroyUnits()
+	allUnits := cbcluster.ExtractBoolArg(arguments, "--all-units")
+
+	return couchbaseFleet.DestroyUnits(allUnits)
 
 }

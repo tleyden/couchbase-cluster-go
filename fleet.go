@@ -116,7 +116,10 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 
 }
 
-func (c CouchbaseFleet) StopUnits() error {
+// Call Fleet API and tell it to stop units.  If allUnits is false,
+// will only stop couchbase server node + couchbase server sidekick units.
+// Otherwise, will stop all fleet units.
+func (c CouchbaseFleet) StopUnits(allUnits bool) error {
 
 	// set the /couchbase.com/remove-rebalance-disabled flag in etcd since
 	// otherwise, it will try to remove and rebalance the node, which is not
@@ -143,11 +146,14 @@ func (c CouchbaseFleet) StopUnits() error {
 
 	}
 
-	return c.ManipulateUnits(unitStopper)
+	return c.ManipulateUnits(unitStopper, allUnits)
 
 }
 
-func (c CouchbaseFleet) DestroyUnits() error {
+// Call Fleet API and tell it to destroy units.  If allUnits is false,
+// will only stop couchbase server node + couchbase server sidekick units.
+// Otherwise, will stop all fleet units.
+func (c CouchbaseFleet) DestroyUnits(allUnits bool) error {
 
 	ttlSeconds := uint64(300)
 	_, err := c.etcdClient.Set(KEY_REMOVE_REBALANCE_DISABLED, "true", ttlSeconds)
@@ -165,13 +171,13 @@ func (c CouchbaseFleet) DestroyUnits() error {
 
 	}
 
-	return c.ManipulateUnits(unitDestroyer)
+	return c.ManipulateUnits(unitDestroyer, allUnits)
 
 }
 
 type UnitManipulator func(unit *schema.Unit) error
 
-func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
+func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator, manipulateAllUnits bool) error {
 
 	// find all the units
 	allUnits, err := c.findAllFleetUnits()
@@ -179,10 +185,15 @@ func (c CouchbaseFleet) ManipulateUnits(unitManipulator UnitManipulator) error {
 		return err
 	}
 
-	unitNamePatterns := []string{UNIT_NAME_NODE, UNIT_NAME_SIDEKICK}
+	var units []*schema.Unit
 
-	// filter the ones out that have the name pattern we care about (couchbase_node)
-	units := c.filterFleetUnits(allUnits, unitNamePatterns)
+	if manipulateAllUnits {
+		units = allUnits
+	} else {
+		// filter the ones out that have the name pattern we care about (couchbase_node)
+		unitNamePatterns := []string{UNIT_NAME_NODE, UNIT_NAME_SIDEKICK}
+		units = c.filterFleetUnits(allUnits, unitNamePatterns)
+	}
 
 	for _, unit := range units {
 		if err := unitManipulator(unit); err != nil {
