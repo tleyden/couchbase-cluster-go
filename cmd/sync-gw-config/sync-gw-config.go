@@ -65,7 +65,7 @@ func rewriteConfig(arguments map[string]interface{}) error {
 		return err
 	}
 
-	log.Printf("Rewritten sync gw config: %v", string(updatedConfig))
+	log.Printf("Rewritten sync gw config file: %v", string(updatedConfig))
 
 	// write the new config to the dest file
 	if err := ioutil.WriteFile(dest, updatedConfig, 0644); err != nil {
