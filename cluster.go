@@ -1014,6 +1014,7 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 func (c CouchbaseCluster) EventLoop() {
 
 	log.Printf("EventLoop()")
+	defer log.Printf("/EventLoop()")
 
 	var lastErr error
 
