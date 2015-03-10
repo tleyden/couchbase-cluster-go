@@ -33,6 +33,8 @@ const (
 	LOCAL_COUCHBASE_PORT          = "8091"
 	DEFAULT_BUCKET_RAM_MB         = "128"
 	DEFAULT_BUCKET_REPLICA_NUMBER = "1"
+
+	DEFAULT_CB_PORT = "8091"
 )
 
 type CouchbaseCluster struct {
@@ -223,11 +225,16 @@ func (c CouchbaseCluster) FindLiveNode() (string, error) {
 
 	for _, subNode := range node.Nodes {
 
-		// the key will be: /node-state/172.17.8.101:8091, but we
+		// the key will be: /node-state/172.17.8.101, but we
 		// only want the last element in the path
 		_, subNodeIp := path.Split(subNode.Key)
 
-		log.Printf("subNodeIp: %v", subNodeIp)
+		log.Printf("Couchbase node ip: %v", subNodeIp)
+
+		if !verifyRestService(subNodeIp, DEFAULT_CB_PORT) {
+			log.Printf("Could not connect to REST service on %v, skipping", subNodeIp)
+			continue
+		}
 
 		return subNodeIp, nil
 	}
@@ -270,19 +277,28 @@ func (c *CouchbaseCluster) FetchClusterDetails() error {
 
 }
 
+func verifyRestService(hostIp string, port string) bool {
+
+	endpointUrl := fmt.Sprintf("http://%v:%v/", hostIp, port)
+	log.Printf("Verifying REST service at %v to be up", endpointUrl)
+	resp, err := http.Get(endpointUrl)
+	if err != nil {
+		return false
+	}
+	if err == nil {
+		defer resp.Body.Close()
+		return resp.StatusCode == 200
+	}
+	return true
+
+}
+
 func (c CouchbaseCluster) WaitForRestService() error {
 
 	for i := 0; i < MAX_RETRIES_START_COUCHBASE; i++ {
 
-		endpointUrl := fmt.Sprintf("http://%v:%v/", c.LocalCouchbaseIp, c.LocalCouchbasePort)
-		log.Printf("Waiting for REST service at %v to be up", endpointUrl)
-		resp, err := http.Get(endpointUrl)
-		if err == nil {
-			defer resp.Body.Close()
-			if resp.StatusCode == 200 {
-				log.Printf("REST service appears to be up")
-				return nil
-			}
+		if verifyRestService(c.LocalCouchbaseIp, c.LocalCouchbasePort) {
+			return nil
 		}
 
 		log.Printf("Not up yet, sleeping and will retry")
