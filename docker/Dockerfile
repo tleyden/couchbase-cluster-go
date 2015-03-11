@@ -10,13 +10,18 @@ ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
 
 # Get dependencies
 RUN apt-get update && apt-get install -y \
-  bc \
-  curl \
-  emacs \
-  git \
-  mercurial \
-  wget && \
-  apt-get clean
+    bc \
+    curl \
+    emacs \
+    git \
+    mercurial \
+    wget && \
+    apt-get clean
+
+# Download and install jq
+RUN wget http://stedolan.github.io/jq/download/linux64/jq && \
+    chmod +x jq && \
+    mv jq /usr/local/bin
 
 # Download and install Go 1.4
 RUN wget http://golang.org/dl/go1.4.1.linux-amd64.tar.gz && \
