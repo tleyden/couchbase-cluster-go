@@ -24,9 +24,9 @@ RUN wget http://stedolan.github.io/jq/download/linux64/jq && \
     mv jq /usr/local/bin
 
 # Download and install Go 1.4
-RUN wget http://golang.org/dl/go1.4.1.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.4.1.linux-amd64.tar.gz && \
-    rm go1.4.1.linux-amd64.tar.gz
+RUN wget http://golang.org/dl/go1.4.2.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz && \
+    rm go1.4.2.linux-amd64.tar.gz
 
 # install go packages
 RUN go get github.com/tools/godep && \
@@ -41,5 +41,4 @@ RUN git clone https://github.com/fgimenez/.emacs.d.git /root/.emacs.d && \
 
 # Install couchbase-cluster-go
 RUN godep get github.com/tleyden/couchbase-cluster-go/...
-
 
