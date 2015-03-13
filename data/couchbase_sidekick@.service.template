@@ -6,8 +6,8 @@ After=etcd.service
 Requires=etcd.service
 After=fleet.service
 Requires=fleet.service
-BindsTo=couchbase_node_{{ .UNIT_NUMBER }}.service
-After=couchbase_node_{{ .UNIT_NUMBER }}.service
+BindsTo=couchbase_node@{{ .UNIT_NUMBER }}.service
+After=couchbase_node@{{ .UNIT_NUMBER }}.service
 
 [Service]
 TimeoutStartSec=0
@@ -19,4 +19,4 @@ ExecStart=/bin/bash -c '/usr/bin/docker run --name couchbase-sidekick --net=host
 ExecStop=/usr/bin/docker stop couchbase-sidekick
 
 [X-Fleet]
-MachineOf=couchbase_node_{{ .UNIT_NUMBER }}.service
+MachineOf=couchbase_node@{{ .UNIT_NUMBER }}.service

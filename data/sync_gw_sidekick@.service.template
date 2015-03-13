@@ -4,8 +4,8 @@ After=docker.service
 Requires=docker.service
 After=etcd.service
 Requires=etcd.service
-BindsTo=sync_gw_node_{{ .UNIT_NUMBER }}.service
-After=sync_gw_node_{{ .UNIT_NUMBER }}.service
+BindsTo=sync_gw_node@{{ .UNIT_NUMBER }}.service
+After=sync_gw_node@{{ .UNIT_NUMBER }}.service
 
 [Service]
 TimeoutStartSec=0
@@ -17,4 +17,4 @@ ExecStart=/bin/bash -c '/usr/bin/docker run --name sync-gw-sidekick --net=host t
 ExecStop=/usr/bin/docker stop sync-gw-sidekick
 
 [X-Fleet]
-MachineOf=sync_gw_node_{{ .UNIT_NUMBER }}.service
+MachineOf=sync_gw_node@{{ .UNIT_NUMBER }}.service
