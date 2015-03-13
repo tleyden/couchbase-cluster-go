@@ -572,7 +572,7 @@ func launchFleetUnitN(unitName string, unitNumber int, fleetUnitJson string) err
 
 	log.Printf("Launch fleet unit %v (%v)", unitName, unitNumber)
 
-	endpointUrl := fmt.Sprintf("%v/units/%v_%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
+	endpointUrl := fmt.Sprintf("%v/units/%v@%v.service", FLEET_API_ENDPOINT, unitName, unitNumber)
 
 	return PUT(endpointUrl, fleetUnitJson)
 
