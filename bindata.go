@@ -96,7 +96,7 @@ func data_couchbase_sidekick_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/couchbase_sidekick@.service.template", size: 858, mode: os.FileMode(420), modTime: time.Unix(1425654765, 0)}
+	info := bindata_file_info{name: "data/couchbase_sidekick@.service.template", size: 858, mode: os.FileMode(420), modTime: time.Unix(1426256972, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -156,7 +156,7 @@ func data_sync_gw_sidekick_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template", size: 789, mode: os.FileMode(420), modTime: time.Unix(1425654434, 0)}
+	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template", size: 789, mode: os.FileMode(420), modTime: time.Unix(1426256972, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }

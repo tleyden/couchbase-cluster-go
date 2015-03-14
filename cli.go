@@ -49,7 +49,34 @@ func ExtractDockerTagOrLatest(docOptParsed map[string]interface{}) string {
 }
 
 func ExtractCbVersion(docOptParsed map[string]interface{}) (string, error) {
-	return ExtractStringArg(docOptParsed, "--version")
+
+	rawVersion, err := ExtractStringArg(docOptParsed, "--version")
+	if err != nil {
+		return rawVersion, err
+	}
+
+	// We possibly need to tack on "ent" to the end of the version string
+	// in the case of enterprise versions, so that we can find the docker
+	// image on dockerhub when launched from the fleet script.
+	rawEdition, _ := docOptParsed["--edition"]
+
+	if rawEdition != nil {
+		switch rawEdition {
+		case "":
+			// if no edition given, use community edition by not
+			// appending anything to version
+		case "community":
+			// nothing to do in this case, since the docker images don't have
+			// community in their name (yet)
+		case "enterprise":
+			rawVersion = fmt.Sprintf("%v-ent", rawVersion)
+		default:
+			return "", fmt.Errorf("Invalid value for edition: %v", rawEdition)
+		}
+	}
+
+	return rawVersion, nil
+
 }
 
 func ExtractIntArg(docOptParsed map[string]interface{}, argToExtract string) (int, error) {

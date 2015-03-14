@@ -12,7 +12,7 @@ func main() {
 	usage := `Couchbase-Fleet.
 
 Usage:
-  couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] [--skip-clean-slate-check]
+  couchbase-fleet launch-cbs --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--edition=<edition>] [--etcd-servers=<server-list>] [--docker-tag=<dt>] [--skip-clean-slate-check]
   couchbase-fleet stop [--all-units] [--etcd-servers=<server-list>]
   couchbase-fleet destroy [--all-units] [--etcd-servers=<server-list>]
   couchbase-fleet generate-units --version=<cb-version> --num-nodes=<num_nodes> --userpass=<user:pass> [--etcd-servers=<server-list>] [--docker-tag=<dt>] --output-dir=<output_dir>
@@ -22,7 +22,8 @@ Options:
   -h --help     Show this screen.
   --version=<cb-version> Couchbase Server version (3.0.1 or 2.2) 
   --num-nodes=<num_nodes> number of couchbase nodes to start
-  --userpass <user:pass> the username and password as a single string, delimited by a colon (:)
+  --userpass=<user:pass> the username and password as a single string, delimited by a colon (:)
+  --edition=<edition> the edition to use, either "enterprise" or "community".  Defaults to "community" edition. 
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
   --docker-tag=<dt>  if present, use this docker tag for spawned containers, otherwise, default to "latest"
   --skip-clean-slate-check  if present, will skip the check that we are starting from clean state
