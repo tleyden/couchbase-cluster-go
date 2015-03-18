@@ -1065,8 +1065,9 @@ func (c CouchbaseCluster) PublishNodeStateEtcd(ttlSeconds uint64) error {
 	// the etcd key to use, ie: /couchbase-node-state/<our ip>
 	// TODO: maybe this should be ip:port
 	key := path.Join(KEY_NODE_STATE, c.LocalCouchbaseIp)
-
-	_, err := c.etcdClient.Set(key, "up", ttlSeconds)
+	// TODO: don't hardcode port
+	ipAndPort := fmt.Sprintf("%v:8091", c.LocalCouchbaseIp)
+	_, err := s.etcdClient.Set(key, ipAndPort, ttlSeconds)
 
 	return err
 
