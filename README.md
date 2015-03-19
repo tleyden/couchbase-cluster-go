@@ -31,7 +31,7 @@ A live Couchbase Server node will be discovered via etcd and the value in the Sy
 
 [Complete Sync Gateway Config example](https://gist.github.com/tleyden/ca063725e6158eca4093)
 
-### Destroying cluster
+### Destroying the cluster
 
 The following commands will stop and destroy all units (Couchbase Server, Sync Gateway, and otherwise)
 
