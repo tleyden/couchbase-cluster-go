@@ -3,10 +3,62 @@
 
 This is a Go library that helps initialize and manage a Couchbase Server cluster running under CoreOS.
 
-## Requirements
 
-* Couchbase Server
-* Etcd present on all nodes (this ships by default with CoreOS)
+## Instructions 
+
+* [Couchbase Server](http://tleyden.github.io/blog/2014/11/01/running-couchbase-cluster-under-coreos-on-aws/)
+
+* [Couchbase Server + Sync Gateway](http://tleyden.github.io/blog/2014/12/15/running-a-sync-gateway-cluster-under-coreos-on-aws/)
+
+
+## Power Tips
+
+### Running on the latest code
+
+Since the docker image can be out of date, and rebuilding it can be time consuming, there is a way to force couchbase-cluster-go to run the latest version of the code:
+
+```
+$ etcdctl set /couchbase.com/enable-code-refresh true
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet launch-cbs --version 3.0.1 --num-nodes 3 --userpass "user:passw0rd" 
+$ $ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
+```
+
+### Sync Gateway -> Couchbase Server service discovery
+
+There is a mechanism that will rewrite the Sync Gateway config provided before launching the Sync Gateway.  To leverage this, simply modify your Sync Gateway config so that the `server` field contains `http://{{ .COUCHBASE_SERVER_IP }}:8091`.  
+
+A live Couchbase Server node will be discovered via etcd and the value in the Sync Gateway config will be replaced with that node's ip address.
+
+[Complete Sync Gateway Config example](https://gist.github.com/tleyden/ca063725e6158eca4093)
+
+### Destroying cluster
+
+The following commands will stop and destroy all units (Couchbase Server, Sync Gateway, and otherwise)
+
+```
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet stop --all-units
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet destroy --all-units
+```
+
+This command will delete all persistent data in the `/opt/var/couchbase` directory across all machines on the cluster.
+
+```
+fleetctl list-machines | grep -v MACHINE | awk '{print $2}' | xargs -I{} ssh {} 'sudo rm -rf /opt/couchbase/var/'
+```
+
+### Workaround fleetctl start issues
+
+Units will frequently come up as failed due to [fleet issue 1149](https://github.com/coreos/fleet/issues/1149).  To workaround couchbase_sidekick@1.service coming up as failed, do the following:
+
+```
+$ fleetctl cat couchbase_sidekick@1.service > couchbase_sidekick@1.service
+$ fleetctl stop couchbase_sidekick@1.service
+$ fleetctl destroy couchbase_sidekick@1.service
+$ fleetctl start couchbase_sidekick@1.service
+```
+
+The last command will use the unit file saved in the first step.
+
 
 ## Issue Tracker
 
@@ -14,5 +66,4 @@ Please file issues to the [couchbase-server-docker](https://github.com/couchbase
 
 ## References
 
-* [Running a Sync Gateway Cluster Under CoreOS on AWS](http://tleyden.github.io/blog/2014/12/15/running-a-sync-gateway-cluster-under-coreos-on-aws/)
 * [couchbase-server-docker repo](https://github.com/couchbaselabs/couchbase-server-docker)	
