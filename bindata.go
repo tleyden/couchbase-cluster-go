@@ -116,7 +116,7 @@ func data_sync_gw_node_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1190, mode: os.FileMode(420), modTime: time.Unix(1426980731, 0)}
+	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1190, mode: os.FileMode(420), modTime: time.Unix(1426981301, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }

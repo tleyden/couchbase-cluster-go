@@ -21,7 +21,6 @@ Options:
   --num-nodes=<num_nodes> number of sync gw nodes to start
   --config-url=<config_url> the url where the sync gw config json is stored
   --sync-gw-commit=<branch-or-commit> the branch or commit of sync gw to use, defaults to "image", which is the master branch at the time the docker image was built.
-  --in-memory-db add this flag if you don't need to wait for Couchbase Server to launch
   --create-bucket=<bucket-name> create a bucket on couchbase server with the given name 
   --create-bucket-size=<bucket-size-mb> if creating a bucket, use this size in MB
   --create-bucket-replicas=<replica-count> if creating a bucket, use this replica count (defaults to 1)
