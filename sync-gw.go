@@ -32,6 +32,7 @@ type SyncGwCluster struct {
 	CreateBucketSize         int
 	CreateBucketReplicaCount int
 	LocalIp                  string
+	RequiresCouchbaseServer  bool
 }
 
 func NewSyncGwCluster(etcdServers []string) *SyncGwCluster {
@@ -395,9 +396,16 @@ func (s SyncGwCluster) generateNodeFleetUnitFile() (string, error) {
 	}
 
 	params := struct {
-		CONTAINER_TAG string
+		CONTAINER_TAG      string
+		WAIT_UNTIL_RUNNING string
 	}{
 		CONTAINER_TAG: s.ContainerTag,
+	}
+
+	if s.RequiresCouchbaseServer {
+		params.WAIT_UNTIL_RUNNING = "wait-until-running"
+	} else {
+		params.WAIT_UNTIL_RUNNING = ""
 	}
 
 	return generateUnitFileFromTemplate(content, params)
