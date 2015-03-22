@@ -404,8 +404,10 @@ func (s SyncGwCluster) generateNodeFleetUnitFile() (string, error) {
 
 	if s.RequiresCouchbaseServer {
 		params.WAIT_UNTIL_RUNNING = "wait-until-running"
+		log.Printf("params.WAIT_UNTIL_RUNNING")
 	} else {
 		params.WAIT_UNTIL_RUNNING = ""
+		log.Printf("params.!!WAIT_UNTIL_RUNNING")
 	}
 
 	return generateUnitFileFromTemplate(content, params)

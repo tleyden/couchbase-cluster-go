@@ -60,7 +60,9 @@ func launchSyncGateway(arguments map[string]interface{}) error {
 	}
 
 	inMemoryDb := cbcluster.ExtractBoolArg(arguments, "--in-memory-db")
+	log.Printf("inMemorydb: %v", inMemoryDb)
 	syncGwCluster.RequiresCouchbaseServer = !inMemoryDb
+	log.Printf("syncGwCluster.RequiresCouchbaseServer: %v", syncGwCluster.RequiresCouchbaseServer)
 
 	return syncGwCluster.LaunchSyncGateway()
 
