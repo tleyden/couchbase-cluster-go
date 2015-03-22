@@ -406,7 +406,7 @@ func (s SyncGwCluster) generateNodeFleetUnitFile() (string, error) {
 		params.WAIT_UNTIL_RUNNING = "wait-until-running"
 		log.Printf("params.WAIT_UNTIL_RUNNING")
 	} else {
-		params.WAIT_UNTIL_RUNNING = ""
+		params.WAIT_UNTIL_RUNNING = "--help"
 		log.Printf("params.!!WAIT_UNTIL_RUNNING")
 	}
 
