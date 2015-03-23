@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"regexp"
 
 	"github.com/docopt/docopt-go"
 	"github.com/tleyden/couchbase-cluster-go"
@@ -36,6 +37,14 @@ Options:
 
 }
 
+// does this config need to be rerwritten?  if it doesn't have
+// any placeholder variables, then the answer is no.
+func requiresRewrite(syncGwConfig string) bool {
+	re := regexp.MustCompile(`{{.*}}`)
+	placeholder := re.FindString(syncGwConfig)
+	return placeholder != ""
+}
+
 func rewriteConfig(arguments map[string]interface{}) error {
 
 	etcdServers := cbcluster.ExtractEtcdServerList(arguments)
@@ -48,6 +57,11 @@ func rewriteConfig(arguments map[string]interface{}) error {
 
 	// get the sync gw config from etcd (cbcluster.KEY_SYNC_GW_CONFIG)
 	syncGwConfig, err := syncGwCluster.FetchSyncGwConfig()
+
+	if !requiresRewrite(syncGwConfig) {
+		log.Printf("No placeholder variables in config, no rewrite required")
+		return nil
+	}
 
 	// get a couchbase live node
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
