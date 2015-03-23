@@ -60,29 +60,31 @@ func rewriteConfig(arguments map[string]interface{}) error {
 
 	if !requiresRewrite(syncGwConfig) {
 		log.Printf("No placeholder variables in config, no rewrite required")
-		return nil
+	} else {
+
+		// get a couchbase live node
+		couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
+		liveNodeIp, err := couchbaseCluster.FindLiveNode()
+
+		log.Printf("LiveNodeIp: %v", liveNodeIp)
+
+		if err != nil {
+			return err
+		}
+
+		// run the sync gw config through go templating engine
+		syncGwConfigBytes, err := syncGwCluster.UpdateConfig(liveNodeIp, syncGwConfig)
+		if err != nil {
+			return err
+		}
+		syncGwConfig = string(syncGwConfigBytes)
+
 	}
 
-	// get a couchbase live node
-	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
-	liveNodeIp, err := couchbaseCluster.FindLiveNode()
-
-	log.Printf("LiveNodeIp: %v", liveNodeIp)
-
-	if err != nil {
-		return err
-	}
-
-	// run the sync gw config through go templating engine
-	updatedConfig, err := syncGwCluster.UpdateConfig(liveNodeIp, syncGwConfig)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("Rewritten sync gw config file: %v", string(updatedConfig))
+	log.Printf("Sync GW config file: %v", string(syncGwConfig))
 
 	// write the new config to the dest file
-	if err := ioutil.WriteFile(dest, updatedConfig, 0644); err != nil {
+	if err := ioutil.WriteFile(dest, []byte(syncGwConfig), 0644); err != nil {
 		return err
 	}
 
