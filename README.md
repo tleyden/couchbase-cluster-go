@@ -23,6 +23,16 @@ $ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper cou
 $ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
 ```
 
+### Running Sync Gateway behind an Nginx proxy
+
+You need to pass another parameter: `--launch-nginx` when launching Sync Gateway, and you also need to be running on the latest code.
+
+The easiest way is to replace the third command in **Running on the latest code** with:
+
+```
+sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --launch-nginx --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
+```
+
 ### Sync Gateway -> Couchbase Server service discovery
 
 There is a mechanism that will rewrite the Sync Gateway config provided before launching the Sync Gateway.  To leverage this, simply modify your Sync Gateway config so that the `server` field contains `http://{{ .COUCHBASE_SERVER_IP }}:8091`.  
