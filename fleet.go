@@ -569,6 +569,28 @@ func launchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
 }
 
+// Launch a fleet unit file that is stored in the data dir (via go-bindata)
+func launchFleetUnitFile(unitName, unitFilePath string) error {
+
+	log.Printf("Launch fleet unit file (%v)", unitName)
+
+	content, err := Asset(unitFilePath)
+	if err != nil {
+		return fmt.Errorf("could not find asset: %v.  err: %v", unitFilePath, err)
+	}
+
+	// convert from text -> json
+	jsonBytes, err := unitFileToJson(string(content))
+	if err != nil {
+		return err
+	}
+
+	endpointUrl := fmt.Sprintf("%v/units/%v.service", FLEET_API_ENDPOINT, unitName)
+
+	return PUT(endpointUrl, string(jsonBytes))
+
+}
+
 func DELETE(endpointUrl string) error {
 
 	client := &http.Client{}
