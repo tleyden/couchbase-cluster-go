@@ -192,10 +192,14 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 		return err
 	}
 
+	// launch nginx (if enabled by command line arg)
 	if s.LaunchNginxEnabled {
+		log.Printf("Launching Nginx")
 		if err := s.LaunchNginx(); err != nil {
 			return err
 		}
+	} else {
+		log.Printf("Not Launching Nginx")
 	}
 
 	log.Printf("Your sync gateway cluster has been launched successfully!")
@@ -547,32 +551,17 @@ func (s SyncGwCluster) createBucketIfNeeded() error {
 
 func (s SyncGwCluster) LaunchNginx() error {
 
-	/*
+	fleetUnits := map[string]string{
+		"confdata": "data/confdata.service",
+		"confd":    "data/confd.service",
+		"nginx":    "data/nginx.service",
+	}
 
-
-		## Create data volume container
-
-		```
-		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confdata.service
-		$ fleetctl start confdata.service
-		```
-
-		## Launch sync-gateway-nginx-confd.service
-
-		```
-		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confd.service
-		$ sed -i -e 's/lordelph\/confd-demo/tleyden5iwx\/sync-gateway-nginx-confd/' confd.service
-		$ fleetctl start confd.service
-		```
-
-		## Launch nginx service
-
-		```
-		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/nginx.service
-		$ fleetctl start nginx.service
-		```
-
-	*/
+	for unitName, unitFilePath := range fleetUnits {
+		if err := launchFleetUnitFile(unitName, unitFilePath); err != nil {
+			return err
+		}
+	}
 
 	return nil
 
