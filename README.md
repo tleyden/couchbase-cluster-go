@@ -30,7 +30,7 @@ You need to pass another parameter: `--launch-nginx` when launching Sync Gateway
 The easiest way is to replace the third command in **Running on the latest code** with:
 
 ```
-sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --launch-nginx --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --launch-nginx --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
 ```
 
 ### Sync Gateway -> Couchbase Server service discovery
