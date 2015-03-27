@@ -33,6 +33,31 @@ The easiest way is to replace the third command in **Running on the latest code*
 $ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --launch-nginx --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
 ```
 
+**Verify Internal**
+
+After the Sync Gateway instance(s) launch, find the IP of the nginx node by:
+
+```
+$ fleetctl list-units
+UNIT				MACHINE				ACTIVE	SUB
+...
+nginx.service			5c7662f4.../10.136.111.112	active	running
+...
+```
+
+From one of the machines in the coreos cluster, try issuing a request to port 80 of that ip:
+
+```
+$ curl 10.136.111.112
+{"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1},"version":"Couchbase Sync Gateway/master(a47a17f)"}
+```
+
+**Verify External**
+
+Finally, you can find the public ip and then pasting the ip into your web browser on your workstation.  If it doesn't work, you may need to update your AWS Security Group to allow access to port 80 from any ip address.
+
+You might also want to change the default Security Group to change port 4984 to only be accessible from within the CloudFormation group (as opposed to accessible from any address). 
+
 ### Sync Gateway -> Couchbase Server service discovery
 
 There is a mechanism that will rewrite the Sync Gateway config provided before launching the Sync Gateway.  To leverage this, simply modify your Sync Gateway config so that the `server` field contains `http://{{ .COUCHBASE_SERVER_IP }}:8091`.  
