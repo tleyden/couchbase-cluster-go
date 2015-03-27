@@ -42,6 +42,8 @@ $ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper cou
 
 This command will delete all persistent data in the `/opt/var/couchbase` directory across all machines on the cluster.
 
+**WARNING - this will destroy all of your data stored in Couchbase**
+
 ```
 fleetctl list-machines | grep -v MACHINE | awk '{print $2}' | xargs -I{} ssh {} 'sudo rm -rf /opt/couchbase/var/'
 ```
