@@ -84,7 +84,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	}
 	for i := 1; i < c.NumNodes+1; i++ {
 
-		if err := submitAndLaunchFleetUnitN(
+		if err := launchFleetUnitN(
 			i,
 			UNIT_NAME_NODE,
 			nodeFleetUnitJson,
@@ -97,7 +97,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 			return err
 		}
 
-		if err := submitAndLaunchFleetUnitN(
+		if err := launchFleetUnitN(
 			i,
 			UNIT_NAME_SIDEKICK,
 			sidekickFleetUnitJson,
@@ -450,6 +450,7 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 		return "", err
 	}
 
+	// convert from text -> json
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {
 		return "", err
@@ -558,17 +559,7 @@ func generateUnitFileFromTemplate(templateContent []byte, params interface{}) (s
 
 }
 
-func submitAndLaunchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
-
-	if err := launchFleetUnitN(unitName, unitNumber, fleetUnitJson); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func launchFleetUnitN(unitName string, unitNumber int, fleetUnitJson string) error {
+func launchFleetUnitN(unitNumber int, unitName, fleetUnitJson string) error {
 
 	log.Printf("Launch fleet unit %v (%v)", unitName, unitNumber)
 

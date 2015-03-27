@@ -389,7 +389,7 @@ func (s SyncGwCluster) kickOffFleetUnits() error {
 
 	for i := 1; i < s.NumNodes+1; i++ {
 
-		if err := submitAndLaunchFleetUnitN(i, "sync_gw_node", fleetUnitJson); err != nil {
+		if err := launchFleetUnitN(i, "sync_gw_node", fleetUnitJson); err != nil {
 			return err
 		}
 
@@ -470,7 +470,7 @@ func (s SyncGwCluster) kickOffFleetSidekickUnits() error {
 			return err
 		}
 
-		if err := submitAndLaunchFleetUnitN(i, "sync_gw_sidekick", fleetUnitJson); err != nil {
+		if err := launchFleetUnitN(i, "sync_gw_sidekick", fleetUnitJson); err != nil {
 			return err
 		}
 
@@ -550,27 +550,27 @@ func (s SyncGwCluster) LaunchNginx() error {
 	/*
 
 
-	## Create data volume container
+		## Create data volume container
 
-	```
-	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confdata.service
-	$ fleetctl start confdata.service
-	```
+		```
+		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confdata.service
+		$ fleetctl start confdata.service
+		```
 
-	## Launch sync-gateway-nginx-confd.service
+		## Launch sync-gateway-nginx-confd.service
 
-	```
-	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confd.service
-	$ sed -i -e 's/lordelph\/confd-demo/tleyden5iwx\/sync-gateway-nginx-confd/' confd.service
-	$ fleetctl start confd.service
-	```
+		```
+		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confd.service
+		$ sed -i -e 's/lordelph\/confd-demo/tleyden5iwx\/sync-gateway-nginx-confd/' confd.service
+		$ fleetctl start confd.service
+		```
 
-	## Launch nginx service
+		## Launch nginx service
 
-	```
-	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/nginx.service
-	$ fleetctl start nginx.service
-	```
+		```
+		$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/nginx.service
+		$ fleetctl start nginx.service
+		```
 
 	*/
 
