@@ -25,7 +25,7 @@ type SyncGwCluster struct {
 	etcdClient               *etcd.Client
 	EtcdServers              []string
 	NumNodes                 int
-	ContainerTag             string // Docker tag
+	ContainerTag             string
 	ConfigUrl                string
 	CommitOrBranch           string
 	CreateBucketName         string
@@ -33,6 +33,7 @@ type SyncGwCluster struct {
 	CreateBucketReplicaCount int
 	LocalIp                  string
 	RequiresCouchbaseServer  bool
+	LaunchNginxEnabled       bool
 }
 
 func NewSyncGwCluster(etcdServers []string) *SyncGwCluster {
@@ -100,6 +101,10 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 	}
 
 	s.ContainerTag = ExtractDockerTagOrLatest(arguments)
+
+	s.RequiresCouchbaseServer = !ExtractBoolArg(arguments, "--in-memory-db")
+
+	s.LaunchNginxEnabled = ExtractBoolArg(arguments, "--launch-nginx")
 
 	return nil
 }
@@ -185,6 +190,12 @@ func (s SyncGwCluster) LaunchSyncGateway() error {
 	// wait for all sync gw nodes to be running
 	if err := s.waitForAllSyncGwNodesRunning(); err != nil {
 		return err
+	}
+
+	if s.LaunchNginxEnabled {
+		if err := s.LaunchNginx(); err != nil {
+			return err
+		}
 	}
 
 	log.Printf("Your sync gateway cluster has been launched successfully!")
@@ -531,5 +542,38 @@ func (s SyncGwCluster) createBucketIfNeeded() error {
 	}
 
 	return cb.CreateBucket(data)
+
+}
+
+func (s SyncGwCluster) LaunchNginx() error {
+
+	/*
+
+
+	## Create data volume container
+
+	```
+	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confdata.service
+	$ fleetctl start confdata.service
+	```
+
+	## Launch sync-gateway-nginx-confd.service
+
+	```
+	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/confd.service
+	$ sed -i -e 's/lordelph\/confd-demo/tleyden5iwx\/sync-gateway-nginx-confd/' confd.service
+	$ fleetctl start confd.service
+	```
+
+	## Launch nginx service
+
+	```
+	$ wget https://raw.githubusercontent.com/lordelph/confd-demo/master/nginx.service
+	$ fleetctl start nginx.service
+	```
+
+	*/
+
+	return nil
 
 }

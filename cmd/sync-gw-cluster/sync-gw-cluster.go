@@ -12,7 +12,7 @@ func main() {
 	usage := `Sync-Gw-Cluster.
 
 Usage:
-  sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--sync-gw-commit=<branch-or-commit>] [--in-memory-db] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] [--create-bucket-replicas=<replica-count>] [--etcd-servers=<server-list>] [--docker-tag=<dt>]
+  sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--sync-gw-commit=<branch-or-commit>] [--in-memory-db] [--launch-nginx] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] [--create-bucket-replicas=<replica-count>] [--etcd-servers=<server-list>] [--docker-tag=<dt>]
   sync-gw-cluster launch-sidekick --local-ip=<ip> [--etcd-servers=<server-list>]
   sync-gw-cluster -h | --help
 
@@ -58,11 +58,6 @@ func launchSyncGateway(arguments map[string]interface{}) error {
 	if err := syncGwCluster.ExtractDocOptArgs(arguments); err != nil {
 		return err
 	}
-
-	inMemoryDb := cbcluster.ExtractBoolArg(arguments, "--in-memory-db")
-	log.Printf("inMemorydb: %v", inMemoryDb)
-	syncGwCluster.RequiresCouchbaseServer = !inMemoryDb
-	log.Printf("syncGwCluster.RequiresCouchbaseServer: %v", syncGwCluster.RequiresCouchbaseServer)
 
 	return syncGwCluster.LaunchSyncGateway()
 
