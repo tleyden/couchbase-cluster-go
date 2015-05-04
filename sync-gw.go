@@ -18,7 +18,6 @@ import (
 const (
 	KEY_SYNC_GW_NODE_STATE = "/couchbase.com/sync-gw-node-state"
 	KEY_SYNC_GW_CONFIG     = "/couchbase.com/sync-gateway/config"
-	KEY_SYNC_GW_COMMIT     = "/couchbase.com/sync-gateway/commit"
 )
 
 type SyncGwCluster struct {
@@ -27,7 +26,6 @@ type SyncGwCluster struct {
 	NumNodes                 int
 	ContainerTag             string
 	ConfigUrl                string
-	CommitOrBranch           string
 	CreateBucketName         string
 	CreateBucketSize         int
 	CreateBucketReplicaCount int
@@ -74,14 +72,6 @@ func (s *SyncGwCluster) ExtractDocOptArgs(arguments map[string]interface{}) erro
 		return fmt.Errorf("Missing or empty config url")
 	}
 	s.ConfigUrl = configUrl
-
-	commitOrBranch, _ := ExtractStringArg(arguments, "--sync-gw-commit")
-	if commitOrBranch != "" {
-		s.CommitOrBranch = commitOrBranch
-	} else {
-		// "image" means: use master branch commit when docker image built
-		s.CommitOrBranch = "image"
-	}
 
 	createBucketName, _ := ExtractStringArg(arguments, "--create-bucket")
 	if createBucketName != "" {
@@ -504,10 +494,6 @@ func (s SyncGwCluster) addValuesEtcd() error {
 
 	// add values to etcd
 	_, err := s.etcdClient.Set(KEY_SYNC_GW_CONFIG, s.ConfigUrl, 0)
-	if err != nil {
-		return err
-	}
-	_, err = s.etcdClient.Set(KEY_SYNC_GW_COMMIT, s.CommitOrBranch, 0)
 	if err != nil {
 		return err
 	}

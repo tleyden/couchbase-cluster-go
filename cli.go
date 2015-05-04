@@ -63,13 +63,12 @@ func ExtractCbVersion(docOptParsed map[string]interface{}) (string, error) {
 	if rawEdition != nil {
 		switch rawEdition {
 		case "":
-			// if no edition given, use community edition by not
-			// appending anything to version
+			// if no edition given, use community edition
+			rawVersion = fmt.Sprintf("community-%v", rawVersion)
 		case "community":
-			// nothing to do in this case, since the docker images don't have
-			// community in their name (yet)
+			rawVersion = fmt.Sprintf("community-%v", rawVersion)
 		case "enterprise":
-			rawVersion = fmt.Sprintf("%v-ent", rawVersion)
+			rawVersion = fmt.Sprintf("enterprise-%v", rawVersion)
 		default:
 			return "", fmt.Errorf("Invalid value for edition: %v", rawEdition)
 		}
