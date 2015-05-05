@@ -59,7 +59,20 @@ func (c *CouchbaseFleet) ConnectToEtcd() {
 	c.etcdClient.SetConsistency(etcd.STRONG_CONSISTENCY)
 }
 
+// Is the Fleet API available?  If not, return an error.
+func (c CouchbaseFleet) VerifyFleetAPIAvailable() error {
+	endpointUrl := fmt.Sprintf("%v/machines", FLEET_API_ENDPOINT)
+	jsonMap := map[string]interface{}{}
+	return getJsonData(endpointUrl, &jsonMap)
+}
+
 func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
+
+	if err := c.VerifyFleetAPIAvailable(); err != nil {
+		msg := "Unable to connect to Fleet API, see http://bit.ly/1AC1iRX " +
+			"for instructions on how to fix this"
+		return fmt.Errorf(msg)
+	}
 
 	if err := c.verifyEnoughMachinesAvailable(); err != nil {
 		return err
