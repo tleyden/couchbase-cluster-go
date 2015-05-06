@@ -526,6 +526,8 @@ func (c CouchbaseFleet) generateNodeFleetUnitFile() (string, error) {
 		CONTAINER_TAG: c.ContainerTag,
 	}
 
+	log.Printf("Generating node from %v with params: %+v", assetName, params)
+
 	return generateUnitFileFromTemplate(content, params)
 
 }
@@ -547,6 +549,8 @@ func (c CouchbaseFleet) generateSidekickFleetUnitFile(unitNumber string) (string
 		CONTAINER_TAG: c.ContainerTag,
 		UNIT_NUMBER:   unitNumber,
 	}
+
+	log.Printf("Generating sidekick from %v with params: %+v", assetName, params)
 
 	return generateUnitFileFromTemplate(content, params)
 
