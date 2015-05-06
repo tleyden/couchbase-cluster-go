@@ -32,7 +32,7 @@ const (
 
 	LOCAL_COUCHBASE_PORT          = "8091"
 	DEFAULT_BUCKET_RAM_MB         = "128"
-	DEFAULT_BUCKET_REPLICA_NUMBER = "1"
+	DEFAULT_BUCKET_REPLICA_NUMBER = "0"
 
 	DEFAULT_CB_PORT = "8091"
 )
@@ -57,6 +57,9 @@ func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
 
 	c := &CouchbaseCluster{}
 	StupidPortHack(c)
+
+	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
+	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
 
 	if len(etcdServers) > 0 {
 		c.EtcdServers = etcdServers
@@ -83,8 +86,6 @@ func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 	}
 
 	c.LocalCouchbasePort = LOCAL_COUCHBASE_PORT
-	c.defaultBucketRamQuotaMB = DEFAULT_BUCKET_RAM_MB
-	c.defaultBucketReplicaNumber = DEFAULT_BUCKET_REPLICA_NUMBER
 
 	success, err := c.BecomeFirstClusterNode()
 	if err != nil {
@@ -492,19 +493,44 @@ func (c CouchbaseCluster) CreateDefaultBucket() error {
 		return nil
 	}
 
-	data := url.Values{
-		"name":          {"default"},
-		"ramQuotaMB":    {c.defaultBucketRamQuotaMB},
-		"authType":      {"none"},
-		"replicaNumber": {c.defaultBucketReplicaNumber},
-		"proxyPort":     {"11215"},
+	// In order to workaround "proxyPort":"port is already in use" errors from
+	// the REST API (I don't understand why I'm getting this when there aren't
+	// any buckets on the node), start at proxy port 11215 and keep looping
+	// until we find one that works.
+	for proxyPort := 11215; proxyPort < 11220; proxyPort++ {
+		data := url.Values{
+			"name":          {"default"},
+			"ramQuotaMB":    {c.defaultBucketRamQuotaMB},
+			"authType":      {"none"},
+			"replicaNumber": {c.defaultBucketReplicaNumber},
+			"proxyPort":     {fmt.Sprintf("%v", proxyPort)},
+		}
+
+		err := c.CreateBucket(data)
+		if err == nil {
+			log.Printf("CreateBucket succeeded")
+			return nil
+		}
+
+		log.Printf("CreateBucket error: %v", err)
+
+		if strings.Contains(err.Error(), "port is already in use") {
+			continue
+		} else {
+			log.Printf("error does not contain string: %v", err.Error())
+		}
+
+		// got a different error, no point in retrying .. just abort
+		return err
 	}
 
-	return c.CreateBucket(data)
+	return fmt.Errorf("Unable to Create Default Bucket after several tries")
 
 }
 
 func (c CouchbaseCluster) CreateBucket(data url.Values) error {
+
+	log.Printf("Create bucket: %+v", data)
 
 	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
 
@@ -981,28 +1007,20 @@ func (c CouchbaseCluster) POST(defaultAdminCreds bool, endpointUrl string, data 
 		AdminPassword: c.AdminPassword,
 	}
 
-	// if defaultAdminCreds, try first with admin creds,
-	// then try again with etcd creds
+	// if defaultAdminCreds, post with default admin creds
 	if defaultAdminCreds {
 
 		log.Printf("Using default username/password")
 		if err := c.POSTWithCreds(defaultCreds, endpointUrl, data); err != nil {
-			log.Printf("Error: %v.  Retry with etcd username/password", err)
-			if err := c.POSTWithCreds(etcdCreds, endpointUrl, data); err != nil {
-				return err
-			}
+			return err
 		}
 
 	} else {
-		// otherwise, do the reverse order .  First try etcd creds, then default.
+		// otherwise use etcd creds
 		log.Printf("Using username/password pulled from etcd")
 		if err := c.POSTWithCreds(etcdCreds, endpointUrl, data); err != nil {
-			log.Printf("Error: %v.  Retry with default username/password", err)
-			if err := c.POSTWithCreds(defaultCreds, endpointUrl, data); err != nil {
-				return err
-			}
+			return err
 		}
-
 	}
 
 	return nil
