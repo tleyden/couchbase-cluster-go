@@ -59,19 +59,17 @@ func ExtractCbVersion(docOptParsed map[string]interface{}) (string, error) {
 	// in the case of enterprise versions, so that we can find the docker
 	// image on dockerhub when launched from the fleet script.
 	rawEdition, _ := docOptParsed["--edition"]
+	if rawEdition == nil || rawEdition == "" {
+		rawEdition = "community"
+	}
 
-	if rawEdition != nil {
-		switch rawEdition {
-		case "":
-			// if no edition given, use community edition
-			rawVersion = fmt.Sprintf("community-%v", rawVersion)
-		case "community":
-			rawVersion = fmt.Sprintf("community-%v", rawVersion)
-		case "enterprise":
-			rawVersion = fmt.Sprintf("enterprise-%v", rawVersion)
-		default:
-			return "", fmt.Errorf("Invalid value for edition: %v", rawEdition)
-		}
+	switch rawEdition {
+	case "community":
+		rawVersion = fmt.Sprintf("community-%v", rawVersion)
+	case "enterprise":
+		rawVersion = fmt.Sprintf("enterprise-%v", rawVersion)
+	default:
+		return "", fmt.Errorf("Invalid value for edition: %v", rawEdition)
 	}
 
 	return rawVersion, nil
