@@ -55,9 +55,12 @@ func ExtractCbVersion(docOptParsed map[string]interface{}) (string, error) {
 		return rawVersion, err
 	}
 
-	// We possibly need to tack on "ent" to the end of the version string
-	// in the case of enterprise versions, so that we can find the docker
-	// image on dockerhub when launched from the fleet script.
+	// if they passed in "latest", ignore the edition and just use the
+	// the "latest" docker tag, which will pull latest enterprise edition.
+	if rawVersion == "latest" {
+		return rawVersion, nil
+	}
+
 	rawEdition, _ := docOptParsed["--edition"]
 	if rawEdition == nil || rawEdition == "" {
 		rawEdition = "community"

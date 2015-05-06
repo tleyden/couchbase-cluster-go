@@ -20,7 +20,7 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  --version=<cb-version> Couchbase Server version (3.0.1 or 2.2) 
+  --version=<cb-version> Couchbase Server version (examples: latest, 3.0.3, 2.2).  The list of supported version corresponds to available tags on dockerhub: https://hub.docker.com/u/couchbase/server 
   --num-nodes=<num_nodes> number of couchbase nodes to start
   --userpass=<user:pass> the username and password as a single string, delimited by a colon (:)
   --edition=<edition> the edition to use, either "enterprise" or "community".  Defaults to "community" edition. 
