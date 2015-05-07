@@ -29,7 +29,6 @@ Options:
 `
 
 	arguments, err := docopt.Parse(usage, nil, true, "Sync-Gw-Cluster", false)
-	log.Printf("args: %v.  err: %v", arguments, err)
 
 	if cbcluster.IsCommandEnabled(arguments, "launch-sgw") {
 		if err := launchSyncGateway(arguments); err != nil {
