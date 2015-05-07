@@ -11,7 +11,7 @@ func main() {
 
 	usage := `Sync-Gw-Cluster:
 
-Usage ..
+Usage:
   sync-gw-cluster launch-sgw --num-nodes=<num_nodes> --config-url=<config_url> [--in-memory-db] [--launch-nginx] [--create-bucket=<bucket-name>] [--create-bucket-size=<bucket-size-mb>] [--create-bucket-replicas=<replica-count>] [--etcd-servers=<server-list>] [--docker-tag=<dt>]
   sync-gw-cluster launch-sidekick --local-ip=<ip> [--etcd-servers=<server-list>]
   sync-gw-cluster -h | --help
