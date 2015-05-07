@@ -53,6 +53,13 @@ type AdminCredentials struct {
 	AdminPassword string
 }
 
+type bucketParams struct {
+	Name          string
+	RamQuotaMB    string
+	AuthType      string
+	ReplicaNumber string
+}
+
 func NewCouchbaseCluster(etcdServers []string) *CouchbaseCluster {
 
 	c := &CouchbaseCluster{}
@@ -482,59 +489,70 @@ func CalculateTotalRam() (int, error) {
 
 func (c CouchbaseCluster) CreateDefaultBucket() error {
 
-	log.Printf("CreateDefaultBucket()")
-
-	hasDefaultBucket, err := c.HasDefaultBucket()
-	if err != nil {
-		return err
-	}
-	if hasDefaultBucket {
-		log.Printf("Default bucket already exists, nothing to do")
-		return nil
+	params := bucketParams{
+		Name:          "default",
+		RamQuotaMB:    c.defaultBucketRamQuotaMB,
+		AuthType:      "none",
+		ReplicaNumber: c.defaultBucketReplicaNumber,
 	}
 
-	// In order to workaround "proxyPort":"port is already in use" errors from
-	// the REST API (I don't understand why I'm getting this when there aren't
-	// any buckets on the node), start at proxy port 11215 and keep looping
-	// until we find one that works.
-	for proxyPort := 11215; proxyPort < 11220; proxyPort++ {
+	return c.CreateBucketWithRetries(params)
+}
+
+func (c CouchbaseCluster) CreateBucket(params bucketParams) error {
+	return c.CreateBucketWithRetries(params)
+}
+
+// In order to workaround "proxyPort":"port is already in use" errors from
+// the REST API (I don't understand why I'm getting this when there aren't
+// any buckets on the node), start at proxy port 11215 and keep looping
+// until we find one that works.
+func (c CouchbaseCluster) CreateBucketWithRetries(params bucketParams) error {
+
+	log.Printf("CreateBucketWithRetries(): %+v", params)
+
+	maxAttempts := 25
+	sleepSeconds := 0
+	proxyPort := 11215
+
+	worker := func() (finished bool, err error) {
+
 		data := url.Values{
-			"name":          {"default"},
-			"ramQuotaMB":    {c.defaultBucketRamQuotaMB},
-			"authType":      {"none"},
-			"replicaNumber": {c.defaultBucketReplicaNumber},
+			"name":          {params.Name},
+			"ramQuotaMB":    {params.RamQuotaMB},
+			"authType":      {params.AuthType},
+			"replicaNumber": {params.ReplicaNumber},
 			"proxyPort":     {fmt.Sprintf("%v", proxyPort)},
 		}
 
-		err := c.CreateBucket(data)
+		endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
+
+		err = c.POST(false, endpointUrl, data)
 		if err == nil {
 			log.Printf("CreateBucket succeeded")
-			return nil
+			return true, nil
 		}
 
 		log.Printf("CreateBucket error: %v", err)
 
 		if strings.Contains(err.Error(), "port is already in use") {
-			continue
-		} else {
-			log.Printf("error does not contain string: %v", err.Error())
+			proxyPort += 1
+			return false, nil // try again
 		}
 
 		// got a different error, no point in retrying .. just abort
-		return err
+		return false, err
+
 	}
 
-	return fmt.Errorf("Unable to Create Default Bucket after several tries")
+	sleeper := func(numAttempts int) (bool, int) {
+		if numAttempts > maxAttempts {
+			return false, -1
+		}
+		return true, sleepSeconds
+	}
 
-}
-
-func (c CouchbaseCluster) CreateBucket(data url.Values) error {
-
-	log.Printf("Create bucket: %+v", data)
-
-	endpointUrl := fmt.Sprintf("http://%v:%v/pools/default/buckets", c.LocalCouchbaseIp, c.LocalCouchbasePort)
-
-	return c.POST(false, endpointUrl, data)
+	return RetryLoop(worker, sleeper)
 
 }
 

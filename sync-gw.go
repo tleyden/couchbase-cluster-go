@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 	"text/template"
@@ -523,15 +522,14 @@ func (s SyncGwCluster) createBucketIfNeeded() error {
 	ramQuotaMB := fmt.Sprintf("%v", s.CreateBucketSize)
 	replicaNumber := fmt.Sprintf("%v", s.CreateBucketReplicaCount)
 
-	data := url.Values{
-		"name":          {s.CreateBucketName},
-		"ramQuotaMB":    {ramQuotaMB},
-		"authType":      {"none"},
-		"replicaNumber": {replicaNumber},
-		"proxyPort":     {"11215"},
+	bucketParams := bucketParams{
+		Name:          s.CreateBucketName,
+		RamQuotaMB:    ramQuotaMB,
+		AuthType:      "none",
+		ReplicaNumber: replicaNumber,
 	}
 
-	return cb.CreateBucket(data)
+	return cb.CreateBucket(bucketParams)
 
 }
 
