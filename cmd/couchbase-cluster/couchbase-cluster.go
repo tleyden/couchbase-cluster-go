@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/docopt/docopt-go"
 	"github.com/tleyden/couchbase-cluster-go"
@@ -14,7 +15,7 @@ func main() {
 
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
-  couchbase-cluster start-couchbase-sidekick --local-ip=<ip> [--etcd-servers=<server-list>] 
+  couchbase-cluster start-couchbase-sidekick (--local-ip=<ip>|--discover-local-ip) [--etcd-servers=<server-list>] 
   couchbase-cluster remove-and-rebalance --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster get-live-node-ip [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
@@ -35,12 +36,29 @@ Options:
 
 	if cbcluster.IsCommandEnabled(arguments, "start-couchbase-sidekick") {
 
-		localIp, found := arguments["--local-ip"]
-		if !found {
-			log.Fatalf("Required argument missing")
+		localIp := "127.0.0.1"
+		log.Printf("args: %v", arguments)
+		discoverLocalIp, _ := arguments["--discover-local-ip"]
+		switch discoverLocalIp {
+		case true:
+			log.Printf("need to discover local ip..")
+			hostname, err := os.Hostname()
+			if err != nil {
+				log.Fatalf("Failed to discover local ip: %v", err)
+			}
+			localIp = hostname
+			log.Printf("Discovered local ip: %v", localIp)
+		default:
+			localIpRaw, _ := arguments["--local-ip"]
+			log.Printf("localIp: %v", localIpRaw)
+			if localIpRaw == nil {
+				log.Fatalf("Required argument missing: --local-ip")
+			}
+			localIp = localIpRaw.(string)
+
 		}
-		localIpString := localIp.(string)
-		startCouchbaseSidekick(etcdServers, localIpString)
+
+		startCouchbaseSidekick(etcdServers, localIp)
 		return
 	}
 
