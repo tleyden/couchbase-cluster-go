@@ -143,13 +143,16 @@ func getTargetAndRemainingArgs() (target string, remainingArgs []string, err err
 
 	target = args[0]
 	if target == SKIP_ETCD_CHECK {
+		log.Printf("target == SKIP")
 		// in this case, we we to strip this arg off as well, since we
 		// don't care about the --skip-etcd-check flag
-		args = os.Args[1:]
+		args = args[1:]
 		target = args[0]
+		log.Printf("args: %v, target: %v", args, target)
 	}
 
 	remainingArgs = args[1:]
+	log.Printf("remainingargs: %v, target: %v", remainingArgs, target)
 
 	return target, remainingArgs, nil
 
@@ -161,6 +164,8 @@ func invokeTarget() error {
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Invoking target: %v with args: %v", target, remainingArgs)
 
 	cmd := exec.Command(target, remainingArgs...)
 	cmd.Stdout = os.Stdout
