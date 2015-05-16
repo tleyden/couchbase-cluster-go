@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/docopt/docopt-go"
@@ -38,15 +39,15 @@ Options:
 
 		localIp := "127.0.0.1"
 		log.Printf("args: %v", arguments)
-		discoverLocalIp, _ := arguments["--discover-local-ip"]
-		switch discoverLocalIp {
+		shouldDiscoverLocalIp, _ := arguments["--discover-local-ip"]
+		switch shouldDiscoverLocalIp {
 		case true:
 			log.Printf("need to discover local ip..")
-			hostname, err := os.Hostname()
+			localIpDiscovered, err := discoverLocalIp()
 			if err != nil {
 				log.Fatalf("Failed to discover local ip: %v", err)
 			}
-			localIp = hostname
+			localIp = localIpDiscovered
 			log.Printf("Discovered local ip: %v", localIp)
 		default:
 			localIpRaw, _ := arguments["--local-ip"]
@@ -125,5 +126,18 @@ func getLiveNodeIp(etcdServers []string) (liveNodeIp string, err error) {
 
 	couchbaseCluster := cbcluster.NewCouchbaseCluster(etcdServers)
 	return couchbaseCluster.FindLiveNode()
+
+}
+
+func discoverLocalIp() (localIp string, err error) {
+
+	host, _ := os.Hostname()
+	addrs, _ := net.LookupIP(host)
+	for _, addr := range addrs {
+		if ipv4 := addr.To4(); ipv4 != nil {
+			return fmt.Sprintf("%v", ipv4), nil
+		}
+	}
+	return "", fmt.Errorf("Could not find localip")
 
 }
