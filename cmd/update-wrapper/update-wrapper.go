@@ -16,12 +16,33 @@ import (
 
 const (
 	KEY_ENABLE_CODE_REFRESH = "/couchbase.com/enable-code-refresh"
+	SKIP_ETCD_CHECK         = "--skip-etcd-check"
 )
 
 func main() {
 
-	// connect to etcd and see if we even need to update the code
-	requiresUpdate := checkUpdateRequired()
+	// by default:
+	//   - check etcd to see if there's a value for the enable-code-refresh key
+	//   - if so, update to latest code
+	// if first arg is --skip-etcd-check:
+	//   - it will skip the check to etcd, and update to the latest code
+
+	// get args with this binary stripped off
+	args := os.Args[1:]
+	if len(args) == 0 {
+		log.Fatalf("No target given in args")
+		return
+	}
+
+	requiresUpdate := false
+
+	switch args[0] {
+	case SKIP_ETCD_CHECK:
+		requiresUpdate = true
+	default:
+		// connect to etcd and see if we even need to update the code
+		requiresUpdate = checkUpdateRequired()
+	}
 
 	if requiresUpdate {
 		log.Printf("Update-Wrapper: updating to latest code")
@@ -104,18 +125,42 @@ func updateAndRebuild() {
 
 }
 
-func invokeTarget() error {
+// This figures out:
+//   - The target command being wrapped by this update-wrapper
+//   - The arguments to pass to that target command
+func getTargetAndRemainingArgs() (target string, remainingArgs []string, err error) {
 
 	// get args with this binary stripped off
 	args := os.Args[1:]
 
 	if len(args) == 0 {
-		return fmt.Errorf("No target given in args")
+		return "", []string{}, fmt.Errorf("No target given in args")
 	}
 
-	target := args[0]
+	// at this point, args[0] will either be:
+	//   - the target command
+	//   - a --skip-etcd-check flag
 
-	remainingArgs := args[1:]
+	target = args[0]
+	if target == SKIP_ETCD_CHECK {
+		// in this case, we we to strip this arg off as well, since we
+		// don't care about the --skip-etcd-check flag
+		args = os.Args[1:]
+		target = args[0]
+	}
+
+	remainingArgs = args[1:]
+
+	return target, remainingArgs, nil
+
+}
+
+func invokeTarget() error {
+
+	target, remainingArgs, err := getTargetAndRemainingArgs()
+	if err != nil {
+		return err
+	}
 
 	cmd := exec.Command(target, remainingArgs...)
 	cmd.Stdout = os.Stdout
