@@ -451,7 +451,7 @@
                 {
                     "name":"ExecStart",
                     "section":"Service",
-                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'"
+                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest'"
                 },
                 {
                     "name":"ExecStop",
@@ -534,7 +534,7 @@
                 {
                     "name":"ExecStart",
                     "section":"Service",
-                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'"
+                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest'"
                 },
                 {
                     "name":"ExecStop",
@@ -617,7 +617,7 @@
                 {
                     "name":"ExecStart",
                     "section":"Service",
-                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest couchbase-start'"
+                    "value":"/bin/bash -c '/usr/bin/docker run --name couchbase -v /opt/couchbase/var:/opt/couchbase/var --net=host tleyden5iwx/couchbase-server-3.0.1:latest'"
                 },
                 {
                     "name":"ExecStop",
