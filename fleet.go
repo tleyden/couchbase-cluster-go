@@ -95,6 +95,8 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Couchbase node fleet unit json: %v", nodeFleetUnitJson)
+
 	for i := 1; i < c.NumNodes+1; i++ {
 
 		if err := launchFleetUnitN(
@@ -109,6 +111,7 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		if err != nil {
 			return err
 		}
+		log.Printf("Couchbase sidekick fleet unit json: %v", sidekickFleetUnitJson)
 
 		if err := launchFleetUnitN(
 			i,
