@@ -95,7 +95,6 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Couchbase node fleet unit json: %v", nodeFleetUnitJson)
 
 	for i := 1; i < c.NumNodes+1; i++ {
 
@@ -111,7 +110,6 @@ func (c *CouchbaseFleet) LaunchCouchbaseServer() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Couchbase sidekick fleet unit json: %v", sidekickFleetUnitJson)
 
 		if err := launchFleetUnitN(
 			i,
@@ -466,6 +464,8 @@ func (c CouchbaseFleet) generateNodeFleetUnitJson() (string, error) {
 		return "", err
 	}
 
+	log.Printf("Couchbase node fleet unit: %v", unitFile)
+
 	// convert from text -> json
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {
@@ -482,6 +482,8 @@ func (c CouchbaseFleet) generateSidekickFleetUnitJson(unitNumber string) (string
 	if err != nil {
 		return "", err
 	}
+
+	log.Printf("Couchbase sidekick fleet unit: %v", unitFile)
 
 	jsonBytes, err := unitFileToJson(unitFile)
 	if err != nil {

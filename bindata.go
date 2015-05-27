@@ -76,7 +76,7 @@ func data_confd_service() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/confd.service", size: 858, mode: os.FileMode(420), modTime: time.Unix(1432760352, 0)}
+	info := bindata_file_info{name: "data/confd.service", size: 858, mode: os.FileMode(420), modTime: time.Unix(1427466163, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -96,7 +96,7 @@ func data_confdata_service() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/confdata.service", size: 430, mode: os.FileMode(420), modTime: time.Unix(1432760352, 0)}
+	info := bindata_file_info{name: "data/confdata.service", size: 430, mode: os.FileMode(420), modTime: time.Unix(1427465921, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -116,7 +116,7 @@ func data_couchbase_node_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/couchbase_node@.service.template", size: 861, mode: os.FileMode(420), modTime: time.Unix(1432760352, 0)}
+	info := bindata_file_info{name: "data/couchbase_node@.service.template", size: 861, mode: os.FileMode(420), modTime: time.Unix(1432311931, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -136,7 +136,7 @@ func data_couchbase_sidekick_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/couchbase_sidekick@.service.template", size: 858, mode: os.FileMode(420), modTime: time.Unix(1432760210, 0)}
+	info := bindata_file_info{name: "data/couchbase_sidekick@.service.template", size: 858, mode: os.FileMode(420), modTime: time.Unix(1426775948, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -156,7 +156,7 @@ func data_nginx_service() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/nginx.service", size: 549, mode: os.FileMode(420), modTime: time.Unix(1432760352, 0)}
+	info := bindata_file_info{name: "data/nginx.service", size: 549, mode: os.FileMode(420), modTime: time.Unix(1427465946, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -176,7 +176,7 @@ func data_sync_gw_node_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1047, mode: os.FileMode(420), modTime: time.Unix(1432760407, 0)}
+	info := bindata_file_info{name: "data/sync_gw_node@.service.template", size: 1047, mode: os.FileMode(420), modTime: time.Unix(1432768089, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -196,7 +196,7 @@ func data_sync_gw_sidekick_service_template() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template", size: 789, mode: os.FileMode(420), modTime: time.Unix(1432760210, 0)}
+	info := bindata_file_info{name: "data/sync_gw_sidekick@.service.template", size: 789, mode: os.FileMode(420), modTime: time.Unix(1426775948, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -216,7 +216,7 @@ func data_test_fleet_api_units_json() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "data-test/fleet_api_units.json", size: 54532, mode: os.FileMode(420), modTime: time.Unix(1432760352, 0)}
+	info := bindata_file_info{name: "data-test/fleet_api_units.json", size: 54532, mode: os.FileMode(420), modTime: time.Unix(1432312052, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -234,17 +234,6 @@ func Asset(name string) ([]byte, error) {
 		return a.bytes, nil
 	}
 	return nil, fmt.Errorf("Asset %s not found", name)
-}
-
-// MustAsset is like Asset but panics when Asset would return an error.
-// It simplifies safe initialization of global variables.
-func MustAsset(name string) []byte {
-	a, err := Asset(name)
-	if (err != nil) {
-		panic("asset: Asset(" + name + "): " + err.Error())
-	}
-
-	return a
 }
 
 // AssetInfo loads and returns the asset info for the given name.
