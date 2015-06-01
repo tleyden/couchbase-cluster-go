@@ -16,7 +16,7 @@ func main() {
 
 Usage:
   couchbase-cluster wait-until-running [--etcd-servers=<server-list>] 
-  couchbase-cluster start-couchbase-sidekick (--local-ip=<ip>|--discover-local-ip) [--etcd-servers=<server-list>] 
+  couchbase-cluster start-couchbase-sidekick (--local-ip=<ip>|--discover-local-ip) [--etcd-servers=<server-list>|--k8s-service-name=<svc>] 
   couchbase-cluster remove-and-rebalance --local-ip=<ip> [--etcd-servers=<server-list>] 
   couchbase-cluster get-live-node-ip [--etcd-servers=<server-list>] 
   couchbase-cluster -h | --help
@@ -24,6 +24,7 @@ Usage:
 Options:
   -h --help     Show this screen.
   --etcd-servers=<server-list>  Comma separated list of etcd servers, or omit to connect to etcd running on localhost
+  --k8s-service-name=<svc> Discover etcd server from Environment variable (TODO: document variable(s))
   --local-ip=<ip> the ip address (no port) to publish in etcd
 `
 

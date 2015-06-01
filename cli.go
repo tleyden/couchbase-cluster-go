@@ -2,6 +2,8 @@ package cbcluster
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -23,15 +25,47 @@ func ExtractEtcdServerList(docOptParsed map[string]interface{}) []string {
 
 	rawServerList, found := docOptParsed["--etcd-servers"]
 	if !found {
-		return nil
+		log.Printf("ExtractEtcdServerList calling EtcdServerListFromEnv")
+		return EtcdServerListFromEnv(docOptParsed)
 	}
 
 	rawServerListStr, ok := rawServerList.(string)
 	if !ok {
+		log.Printf("ExtractEtcdServerList calling EtcdServerListFromEnv")
+		return EtcdServerListFromEnv(docOptParsed)
+	}
+
+	log.Printf("ExtractEtcdServerList returning: %v", rawServerListStr)
+	return strings.Split(rawServerListStr, ",")
+
+}
+
+func EtcdServerListFromEnv(docOptParsed map[string]interface{}) []string {
+
+	serviceName, found := docOptParsed["--k8s-service-name"]
+	if !found {
+		log.Printf("EtcdServerListFromEnv did not find --k8s-service-name")
 		return nil
 	}
 
-	return strings.Split(rawServerListStr, ",")
+	hostNameEnvVar := fmt.Sprintf("%v_SERVICE_HOST", serviceName)
+	hostName := os.Getenv(hostNameEnvVar)
+
+	portEnvVar := fmt.Sprintf("%v_SERVICE_PORT", serviceName)
+	port := os.Getenv(portEnvVar)
+
+	log.Printf("Etcd hostname: %v port: %v", hostName, port)
+
+	if len(hostName) == 0 {
+		log.Printf("EtcdServerListFromEnv did not find ENV variable: %v", hostNameEnvVar)
+		return nil
+	}
+	if len(port) == 0 {
+		log.Printf("EtcdServerListFromEnv did not find ENV variable: %v", portEnvVar)
+		return nil
+	}
+
+	return []string{fmt.Sprintf("%v:%v", hostName, port)}
 
 }
 
