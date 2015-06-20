@@ -19,6 +19,7 @@ import (
 
 const (
 	KEY_NODE_STATE                = "/couchbase.com/couchbase-node-state"
+	KEY_NODE_STATE_TTL uint64     = 10
 	KEY_USER_PASS                 = "/couchbase.com/userpass"
 	KEY_REMOVE_REBALANCE_DISABLED = "/couchbase.com/remove-rebalance-disabled"
 	TTL_NONE                      = 0
@@ -1059,8 +1060,7 @@ func (c CouchbaseCluster) EventLoop() {
 		// update the node-state directory ttl.  we want this directory
 		// to disappear in case all nodes in the cluster are down, since
 		// otherwise it would just be unwanted residue.
-		ttlSeconds := uint64(10)
-		_, err := c.etcdClient.UpdateDir(KEY_NODE_STATE, ttlSeconds)
+		_, err := c.etcdClient.UpdateDir(KEY_NODE_STATE, KEY_NODE_STATE_TTL)
 		if err != nil {
 			msg := fmt.Sprintf("Error updating %v dir in etc with new TTL. "+
 				"Ignoring error, but this could cause problems",
@@ -1069,7 +1069,7 @@ func (c CouchbaseCluster) EventLoop() {
 		}
 
 		// publish our ip into etcd with short ttl
-		if err := c.PublishNodeStateEtcd(ttlSeconds); err != nil {
+		if err := c.PublishNodeStateEtcd(KEY_NODE_STATE_TTL); err != nil {
 			msg := fmt.Sprintf("Error publishing node state to etcd: %v. "+
 				"Ignoring error, but other nodes won't be able to join"+
 				"this node until this issue is resolved.",
@@ -1089,7 +1089,7 @@ func (c CouchbaseCluster) EventLoop() {
 		}
 
 		// sleep for a while
-		<-time.After(time.Second * time.Duration(ttlSeconds/2))
+		<-time.After(time.Second * time.Duration(KEY_NODE_STATE_TTL/2))
 
 	}
 
