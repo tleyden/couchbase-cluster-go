@@ -97,7 +97,6 @@ The last command will use the unit file saved in the first step.
 ## Issue Tracker
 
 Please file issues to the [couchbase-server-docker](https://github.com/couchbaselabs/couchbase-server-docker) repo.  
+## Related Work
 
-## References
-
-* [couchbase-server-docker repo](https://github.com/couchbaselabs/couchbase-server-docker)	
+* [couchbase-array](https://github.com/andrewwebber/couchbase-array) -- community user contributed alternative solution
