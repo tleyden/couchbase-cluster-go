@@ -95,6 +95,10 @@ func (c *CouchbaseCluster) StartCouchbaseSidekick() error {
 
 	c.LocalCouchbasePort = LOCAL_COUCHBASE_PORT
 
+	// if any of the bootstrapping functions error or panic, we don't want to leave a stale KEY_NODE_STATE
+	// with no ttl, which is the default state inside c.BecomeFirstClusterNode()
+	defer c.etcdClient.UpdateDir(KEY_NODE_STATE, KEY_NODE_STATE_TTL)
+	
 	success, err := c.BecomeFirstClusterNode()
 	if err != nil {
 		return err
