@@ -16,8 +16,16 @@ Since the docker image can be out of date, and rebuilding it can be time consumi
 
 ```
 $ etcdctl set /couchbase.com/enable-code-refresh true
-$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet launch-cbs --version 3.0.1 --num-nodes 3 --userpass "user:passw0rd" 
-$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw --num-nodes=1 --config-url=http://git.io/b9PK --create-bucket todos --create-bucket-size 512 --create-bucket-replicas 1
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper couchbase-fleet launch-cbs \
+  --version 3.0.1 \
+  --num-nodes 3 \
+  --userpass "user:passw0rd" 
+$ sudo docker run --net=host tleyden5iwx/couchbase-cluster-go update-wrapper sync-gw-cluster launch-sgw \
+  --num-nodes=1 \
+  --config-url=http://git.io/b9PK \
+  --create-bucket todos \
+  --create-bucket-size 512 \ 
+  --create-bucket-replicas 1
 ```
 
 ### Running Sync Gateway behind an Nginx proxy
