@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	FLEET_API_ENDPOINT = "http://localhost:49153/fleet/v1"
+	FLEET_API_ENDPOINT = "http://127.0.0.1:49153/fleet/v1"
 )
 
 type CouchbaseFleet struct {
