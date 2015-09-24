@@ -40,5 +40,5 @@ RUN git clone https://github.com/fgimenez/.emacs.d.git /root/.emacs.d && \
     git checkout origin/go
 
 # Install couchbase-cluster-go
-RUN go get github.com/tleyden/couchbase-cluster-go/...
+RUN go get github.com/ClanStyles/couchbase-cluster-go/...
 
