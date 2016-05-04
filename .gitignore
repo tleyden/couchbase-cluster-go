@@ -16,3 +16,4 @@ cmd/update-wrapper/update-wrapper
 cmd/sync-gw-cluster/sync-gw-cluster
 cmd/sync-gw-config/sync-gw-config
 cmd/experiment/experiment
+.vagrant

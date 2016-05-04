@@ -1,0 +1,1 @@
+docker run --rm -it --name couchbase-cluster-go tleyden5iwx/couchbase-cluster-go
